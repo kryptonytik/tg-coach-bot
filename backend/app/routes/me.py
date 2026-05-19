@@ -255,6 +255,82 @@ def list_measurements():
     return jsonify([m.to_dict() for m in measurements])
 
 
+@me_bp.patch("/profile")
+@auth_required
+def update_my_profile():
+    """
+    PATCH /api/me/profile
+    Allows a client to update their own profile fields.
+    Body (all optional): first_name, last_name, phone, goal, target_weight
+    """
+    user = g.current_user
+    client = Client.query.filter_by(user_id=user.id).first()
+    if client is None:
+        return jsonify({"error": "No client profile found"}), 404
+
+    data = request.get_json(silent=True) or {}
+
+    if "first_name" in data:
+        first_name = (data["first_name"] or "").strip()
+        if first_name:
+            client.first_name = first_name
+
+    if "last_name" in data:
+        client.last_name = (data["last_name"] or "").strip() or None
+
+    if "phone" in data:
+        client.phone = (data["phone"] or "").strip() or None
+
+    if "goal" in data:
+        goal = data["goal"]
+        if goal not in VALID_GOALS:
+            return jsonify(
+                {"error": "goal must be one of: {}".format(", ".join(VALID_GOALS))}
+            ), 400
+        client.goal = goal
+
+    if "target_weight" in data:
+        tw = data["target_weight"]
+        if tw is not None:
+            try:
+                tw = float(tw)
+            except (ValueError, TypeError):
+                return jsonify({"error": "target_weight must be a number"}), 400
+        client.target_weight = tw
+
+    db.session.commit()
+    return jsonify(client.to_dict())
+
+
+@me_bp.patch("/questionnaire")
+@auth_required
+def update_my_questionnaire():
+    """
+    PATCH /api/me/questionnaire
+    Allows a client to update (or create) their questionnaire.
+    Body: any questionnaire fields (all optional).
+    """
+    user = g.current_user
+    client = Client.query.filter_by(user_id=user.id).first()
+    if client is None:
+        return jsonify({"error": "No client profile found"}), 404
+
+    data = request.get_json(silent=True) or {}
+
+    q = client.questionnaire
+    if q is None:
+        q = Questionnaire(client_id=client.id)
+        db.session.add(q)
+
+    for field in QUESTIONNAIRE_FIELDS:
+        if field in data and data[field] is not None:
+            setattr(q, field, data[field])
+
+    q.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(q.to_dict())
+
+
 @me_bp.get("/workout-history")
 @auth_required
 def get_workout_history():

@@ -315,8 +315,9 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
         {/* Step 2 */}
         {step === 2 && (
           <>
-            <FieldGroup label="Занимались спортом раньше?">
-              <div style={{ display: 'flex', gap: 8 }}>
+            <div className="form-group">
+              <label className="form-label">Занимались спортом раньше?</label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 {[{ v: true, l: 'Да' }, { v: false, l: 'Нет' }].map(({ v, l }) => (
                   <button
                     key={String(v)}
@@ -324,12 +325,13 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
                     style={{
                       flex: 1,
                       padding: '10px',
-                      border: `2px solid ${form.had_training_before === v ? '#1e8e3e' : '#e0e0e0'}`,
                       borderRadius: 10,
-                      background: form.had_training_before === v ? '#e6f4ea' : '#fff',
-                      color: form.had_training_before === v ? '#1e8e3e' : '#555',
-                      fontSize: 15,
+                      border: '1.5px solid',
+                      borderColor: form.had_training_before === v ? '#2481cc' : '#e5e5ea',
+                      background: form.had_training_before === v ? '#e8f0fe' : '#fff',
+                      color: form.had_training_before === v ? '#2481cc' : '#555',
                       fontWeight: 600,
+                      fontSize: 15,
                       cursor: 'pointer',
                     }}
                   >
@@ -337,155 +339,180 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
                   </button>
                 ))}
               </div>
-            </FieldGroup>
+            </div>
             {form.had_training_before && (
-              <FieldGroup label="Чем занимались?">
+              <div className="form-group">
+                <label className="form-label">Чем занимались?</label>
                 <input
-                  style={inputStyle}
+                  className="form-input"
                   type="text"
                   value={form.previous_sports}
                   onChange={e => set('previous_sports', e.target.value)}
                   placeholder="Футбол, плавание..."
                 />
-              </FieldGroup>
+              </div>
             )}
-            <FieldGroup label="Сколько времени с последней тренировки?">
+            <div className="form-group">
+              <label className="form-label">Сколько времени с последней тренировки?</label>
               <input
-                style={inputStyle}
+                className="form-input"
                 type="text"
                 value={form.time_since_last_workout}
                 onChange={e => set('time_since_last_workout', e.target.value)}
                 placeholder="1 год, 3 месяца..."
               />
-            </FieldGroup>
-            <FieldGroup label={`Физическая подготовка: ${form.fitness_level} / 10`}>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Физическая подготовка</label>
               <input
                 type="range"
                 min={1}
                 max={10}
                 value={form.fitness_level}
-                onChange={e => set('fitness_level', Number(e.target.value))}
-                style={{ width: '100%', accentColor: '#1e8e3e' }}
+                onChange={e => set('fitness_level', parseInt(e.target.value))}
+                style={{ width: '100%', accentColor: '#2481cc' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999' }}>
-                <span>Начинающий</span>
-                <span>Продвинутый</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#8e8e93' }}>
+                <span>1 — Начинающий</span>
+                <span style={{ fontWeight: 700, color: '#2481cc' }}>{form.fitness_level}</span>
+                <span>10 — Профи</span>
               </div>
-            </FieldGroup>
+            </div>
           </>
         )}
 
         {/* Step 3 */}
         {step === 3 && (
           <>
-            <FieldGroup label="Боли в суставах (колени/локти)?">
-              <input
-                style={inputStyle}
-                type="text"
+            <div className="form-section-title">Здоровье и ограничения</div>
+            <div className="form-group">
+              <label className="form-label">Боли в суставах (колени/локти)?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.joint_pain}
                 onChange={e => set('joint_pain', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Проблемы с давлением?">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Проблемы с давлением?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.pressure_issues}
                 onChange={e => set('pressure_issues', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Операции / хирургические вмешательства?">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Операции / хирургические вмешательства?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.surgeries}
                 onChange={e => set('surgeries', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Врождённые / приобретённые патологии?">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Врождённые / приобретённые патологии?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.congenital_conditions}
                 onChange={e => set('congenital_conditions', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Проблемы с ЖКТ?" hint="Гастрит, язва...">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Проблемы с ЖКТ? (Гастрит, язва...)</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.gi_issues}
                 onChange={e => set('gi_issues', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Позвоночник: сколиоз, лордоз, кифоз, грыжа?">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Позвоночник: сколиоз, лордоз, кифоз, грыжа?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.spine_conditions}
                 onChange={e => set('spine_conditions', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Боли в грудной клетке?">
-              <input
-                style={inputStyle}
-                type="text"
+            </div>
+            <div className="form-group">
+              <label className="form-label">Боли в грудной клетке?</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.chest_pain}
                 onChange={e => set('chest_pain', e.target.value)}
                 placeholder="Нет / описать..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
+            </div>
           </>
         )}
 
         {/* Step 4 */}
         {step === 4 && (
           <>
-            <FieldGroup label="Витамины / БАДы / препараты">
-              <input
-                style={inputStyle}
-                type="text"
+            <div className="form-section-title">Параметры и добавки</div>
+            <div className="form-group">
+              <label className="form-label">Витамины / БАДы / препараты</label>
+              <textarea
+                className="form-input"
+                rows={3}
                 value={form.supplements}
                 onChange={e => set('supplements', e.target.value)}
                 placeholder="Не принимаю / перечислить..."
+                style={{ resize: 'none' }}
               />
-            </FieldGroup>
-            <FieldGroup label="Возраст (лет)">
+            </div>
+            <div className="form-group">
+              <label className="form-label">Возраст (лет)</label>
               <input
-                style={inputStyle}
+                className="form-input"
                 type="number"
                 inputMode="numeric"
                 value={form.age}
                 onChange={e => set('age', e.target.value)}
                 placeholder="25"
               />
-            </FieldGroup>
-            <FieldGroup label="Рост (см)">
+            </div>
+            <div className="form-group">
+              <label className="form-label">Рост (см)</label>
               <input
-                style={inputStyle}
+                className="form-input"
                 type="number"
                 inputMode="decimal"
                 value={form.height}
                 onChange={e => set('height', e.target.value)}
                 placeholder="175"
               />
-            </FieldGroup>
-            <FieldGroup label="Вес (кг)">
+            </div>
+            <div className="form-group">
+              <label className="form-label">Вес (кг)</label>
               <input
-                style={inputStyle}
+                className="form-input"
                 type="number"
                 inputMode="decimal"
                 value={form.weight}
                 onChange={e => set('weight', e.target.value)}
                 placeholder="70"
               />
-            </FieldGroup>
+            </div>
           </>
         )}
       </div>
@@ -497,15 +524,14 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
             onClick={back}
             style={{
               flex: 1,
-              padding: '14px',
-              border: '2px solid #e0e0e0',
-              borderRadius: 12,
+              padding: '16px',
+              border: '1.5px solid #e5e5ea',
+              borderRadius: 14,
               background: '#fff',
               color: '#555',
-              fontSize: 16,
-              fontWeight: 600,
+              fontSize: 17,
+              fontWeight: 700,
               cursor: 'pointer',
-              minHeight: 50,
             }}
           >
             Назад
@@ -516,15 +542,14 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
           disabled={submitting}
           style={{
             flex: 2,
-            padding: '14px',
+            padding: '16px',
             border: 'none',
-            borderRadius: 12,
+            borderRadius: 14,
             background: submitting ? '#aaa' : '#1e8e3e',
             color: '#fff',
-            fontSize: 16,
-            fontWeight: 600,
+            fontSize: 17,
+            fontWeight: 700,
             cursor: submitting ? 'not-allowed' : 'pointer',
-            minHeight: 50,
           }}
         >
           {submitting ? 'Сохранение...' : step === TOTAL_STEPS ? 'Готово' : 'Далее'}

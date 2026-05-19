@@ -23,6 +23,8 @@ export const meApi = {
   getMeasurements: () => api.get<BodyMeasurement[]>('/api/me/measurements').then(r => r.data),
   getWorkoutHistory: (params?: {limit?: number; offset?: number}) =>
     api.get<any[]>('/api/me/workout-history', { params }).then(r => r.data),
+  updateProfile: (data: any) => api.patch('/api/me/profile', data).then(r => r.data),
+  updateQuestionnaire: (data: any) => api.patch('/api/me/questionnaire', data).then(r => r.data),
 };
 
 export const trainerApi = {

@@ -78,7 +78,7 @@ export default function Layout({ children, title, showBack, rightAction }: Layou
           {rightAction && <div style={{ marginLeft: 'auto' }}>{rightAction}</div>}
         </header>
       )}
-      <main style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, padding: '16px 16px 32px', display: 'flex', flexDirection: 'column' }}>
         {children}
       </main>
     </div>

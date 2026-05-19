@@ -59,7 +59,7 @@ const labelStyle: React.CSSProperties = {
 
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, width: '100%' }}>
       <label style={labelStyle}>{label}</label>
       {children}
     </div>
@@ -226,7 +226,7 @@ export default function MeasurementsPage({ currentUser }: MeasurementsPageProps 
 
               <FieldGroup label="Дата">
                 <input
-                  style={inputStyle}
+                  style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', minWidth: 0, flex: 1 }}
                   type="date"
                   value={form.date}
                   onChange={e => set('date', e.target.value)}

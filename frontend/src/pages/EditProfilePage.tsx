@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { meApi, clientsApi } from '../api/client';
+import { meApi } from '../api/client';
 import Layout from '../components/Layout';
 import type { CurrentUser, Goal } from '../types';
 
@@ -86,8 +86,6 @@ interface Props {
 }
 
 export default function EditProfilePage({ currentUser, onSaved }: Props) {
-  const clientId = currentUser.client?.id;
-
   // Main fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -152,13 +150,12 @@ export default function EditProfilePage({ currentUser, onSaved }: Props) {
   }, []);
 
   const handleSaveMain = async () => {
-    if (!clientId) return;
     if (!firstName.trim()) { setError('Введите имя'); return; }
     setSaving(true);
     setError(null);
     setSuccessMain(false);
     try {
-      await clientsApi.update(clientId, {
+      await meApi.updateProfile({
         first_name: firstName.trim(),
         last_name: lastName.trim() || null,
         phone: phone.trim() || null,
@@ -176,30 +173,27 @@ export default function EditProfilePage({ currentUser, onSaved }: Props) {
   };
 
   const handleSaveQuestionnaire = async () => {
-    if (!clientId) return;
     setSavingQuestionnaire(true);
     setErrorQ(null);
     setSuccessQ(false);
     try {
-      await clientsApi.update(clientId, {
-        questionnaire: {
-          had_training_before: hadTrainingBefore,
-          previous_sports: previousSports || null,
-          time_since_last_workout: timeSinceLastWorkout || null,
-          fitness_level: fitnessLevel,
-          physical_limitations: physicalLimitations || null,
-          joint_pain: jointPain || null,
-          pressure_issues: pressureIssues || null,
-          surgeries: surgeries || null,
-          congenital_conditions: congenitalConditions || null,
-          gi_issues: giIssues || null,
-          spine_conditions: spineConditions || null,
-          chest_pain: chestPain || null,
-          supplements: supplements || null,
-          age: age ? parseInt(age, 10) : null,
-          height: height ? parseFloat(height) : null,
-          weight: weight ? parseFloat(weight) : null,
-        },
+      await meApi.updateQuestionnaire({
+        had_training_before: hadTrainingBefore,
+        previous_sports: previousSports || null,
+        time_since_last_workout: timeSinceLastWorkout || null,
+        fitness_level: fitnessLevel,
+        physical_limitations: physicalLimitations || null,
+        joint_pain: jointPain || null,
+        pressure_issues: pressureIssues || null,
+        surgeries: surgeries || null,
+        congenital_conditions: congenitalConditions || null,
+        gi_issues: giIssues || null,
+        spine_conditions: spineConditions || null,
+        chest_pain: chestPain || null,
+        supplements: supplements || null,
+        age: age ? parseInt(age, 10) : null,
+        height: height ? parseFloat(height) : null,
+        weight: weight ? parseFloat(weight) : null,
       });
       setSuccessQ(true);
       onSaved?.();
