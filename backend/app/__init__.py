@@ -37,6 +37,9 @@ def create_app(config_name=None) -> Flask:
             WorkoutSession,
             WorkoutSet,
         )
+        db.create_all()
+        from app.seed import run_seed
+        run_seed()
 
     # ── Blueprints ────────────────────────────────────────────────────────────
     from app.routes import register_blueprints
