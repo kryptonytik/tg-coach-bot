@@ -294,6 +294,34 @@ def update_session(session_id: int):
     return jsonify(session.to_dict(include_sets=True))
 
 
+@workouts_bp.delete("/sessions/<int:session_id>")
+@auth_required
+def delete_session(session_id: int):
+    """
+    DELETE /api/workouts/sessions/<id>
+    Hard-deletes the session and all its sets (cascade).
+    Trainers may delete any of their sessions; clients may delete their own.
+    """
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
+
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({"message": "deleted", "id": session_id})
+
+
 # ── Sets ──────────────────────────────────────────────────────────────────────
 
 

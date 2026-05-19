@@ -45,6 +45,8 @@ export default function ExerciseSettingsPage() {
   // Edit state
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState<'strength' | 'functional'>('strength');
+  const [editCategory, setEditCategory] = useState('chest_biceps');
   const [editSaving, setEditSaving] = useState(false);
 
   const fetchExercises = () => {
@@ -94,13 +96,20 @@ export default function ExerciseSettingsPage() {
   const handleEditStart = (ex: Exercise) => {
     setEditingId(ex.id);
     setEditName(ex.name);
+    setEditType((ex.workout_type as 'strength' | 'functional') || 'strength');
+    setEditCategory(ex.category || 'other');
+  };
+
+  const handleEditTypeChange = (type: 'strength' | 'functional') => {
+    setEditType(type);
+    setEditCategory(type === 'strength' ? 'chest_biceps' : 'functional');
   };
 
   const handleEditSave = async (id: number) => {
     if (!editName.trim()) return;
     setEditSaving(true);
     try {
-      await exercisesApi.update(id, { name: editName.trim() });
+      await exercisesApi.update(id, { name: editName.trim(), workout_type: editType, category: editCategory });
       setEditingId(null);
       fetchExercises();
     } catch (err: any) {
@@ -163,52 +172,90 @@ export default function ExerciseSettingsPage() {
             }}
           >
             {editingId === ex.id ? (
-              <>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   style={{
-                    flex: 1,
-                    padding: '6px 10px',
+                    width: '100%',
+                    padding: '7px 10px',
                     border: '1.5px solid #2481cc',
                     borderRadius: 8,
-                    fontSize: 16,
+                    fontSize: 15,
                     outline: 'none',
+                    boxSizing: 'border-box',
                   }}
                   autoFocus
                 />
-                <button
-                  onClick={() => handleEditSave(ex.id)}
-                  disabled={editSaving}
+                <select
+                  value={editType}
+                  onChange={e => handleEditTypeChange(e.target.value as 'strength' | 'functional')}
                   style={{
-                    padding: '6px 10px',
-                    border: 'none',
+                    width: '100%',
+                    padding: '7px 10px',
+                    border: '1.5px solid #e5e5ea',
                     borderRadius: 8,
-                    background: '#1e8e3e',
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    fontSize: 14,
+                    background: '#fff',
+                    outline: 'none',
                   }}
                 >
-                  ✓
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
+                  <option value="strength">Силовая</option>
+                  <option value="functional">Функциональная</option>
+                </select>
+                <select
+                  value={editCategory}
+                  onChange={e => setEditCategory(e.target.value)}
                   style={{
-                    padding: '6px 10px',
-                    border: 'none',
+                    width: '100%',
+                    padding: '7px 10px',
+                    border: '1.5px solid #e5e5ea',
                     borderRadius: 8,
-                    background: '#e0e0e0',
-                    color: '#555',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    fontSize: 14,
+                    background: '#fff',
+                    outline: 'none',
                   }}
                 >
-                  ✗
-                </button>
-              </>
+                  {(editType === 'strength' ? STRENGTH_CATEGORIES : FUNCTIONAL_CATEGORIES).map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => handleEditSave(ex.id)}
+                    disabled={editSaving}
+                    style={{
+                      flex: 2,
+                      padding: '7px 0',
+                      border: 'none',
+                      borderRadius: 8,
+                      background: '#1e8e3e',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✓ Сохранить
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      border: 'none',
+                      borderRadius: 8,
+                      background: '#e0e0e0',
+                      color: '#555',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✗
+                  </button>
+                </div>
+              </div>
             ) : (
               <>
                 <div style={{ flex: 1 }}>

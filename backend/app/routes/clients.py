@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
 from sqlalchemy import func
@@ -44,7 +44,7 @@ def list_clients():
     query = Client.query.filter_by(trainer_id=trainer.id)
 
     query = query.filter(
-        ~((Client.user_id == trainer.id) & (Client.trainer_id == trainer.id))
+        db.or_(Client.user_id == None, Client.user_id != trainer.id)
     )
 
     active_param = request.args.get("active")
@@ -124,6 +124,16 @@ def create_client():
             if field in questionnaire_data:
                 setattr(q, field, questionnaire_data[field])
         db.session.add(q)
+
+        q_weight = questionnaire_data.get("weight")
+        if q_weight is not None:
+            try:
+                baseline = BodyMeasurement(
+                    client_id=client.id, date=date.today(), weight=float(q_weight)
+                )
+                db.session.add(baseline)
+            except (ValueError, TypeError):
+                pass
 
     db.session.commit()
     return jsonify(client.to_dict()), 201

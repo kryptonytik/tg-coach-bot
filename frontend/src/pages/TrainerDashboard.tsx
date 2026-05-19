@@ -161,10 +161,10 @@ export default function TrainerDashboard() {
           </button>
         </div>
 
-        {/* Divider with label "Я" */}
+        {/* Divider with label "МОИ ТРЕНИРОВКИ" */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0 12px' }}>
           <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: 1 }}>Я</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: 1 }}>МОИ ТРЕНИРОВКИ</div>
           <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
         </div>
 
@@ -186,10 +186,12 @@ export default function TrainerDashboard() {
                 alignItems: 'center',
                 gap: 12,
                 minHeight: 60,
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             >
               <span style={{ fontSize: 22 }}>💪</span>
-              <span style={{ flex: 1 }}>Моя тренировка</span>
+              <span style={{ flex: 1 }}>Тренировка</span>
               <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
             </button>
 
@@ -208,10 +210,12 @@ export default function TrainerDashboard() {
                 alignItems: 'center',
                 gap: 12,
                 minHeight: 60,
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             >
               <span style={{ fontSize: 22 }}>📋</span>
-              <span style={{ flex: 1 }}>Моя история</span>
+              <span style={{ flex: 1 }}>История</span>
               <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
             </button>
           </div>

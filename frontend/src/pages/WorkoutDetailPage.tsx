@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { workoutsApi } from '../api/client';
 import Layout from '../components/Layout';
 
@@ -49,10 +49,24 @@ interface SessionDetail {
 
 export default function WorkoutDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const sessionId = parseInt(id || '0', 10);
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!window.confirm('Удалить эту тренировку? Действие нельзя отменить.')) return;
+    setDeleting(true);
+    try {
+      await workoutsApi.deleteSession(sessionId);
+      navigate(-1);
+    } catch {
+      alert('Не удалось удалить тренировку');
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     workoutsApi
@@ -164,6 +178,30 @@ export default function WorkoutDetailPage() {
             </div>
           ))
         )}
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          style={{
+            background: '#fff',
+            color: '#c62828',
+            border: '2px solid #c62828',
+            borderRadius: 14,
+            padding: '14px 20px',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: deleting ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            opacity: deleting ? 0.6 : 1,
+            width: '100%',
+          }}
+        >
+          🗑️ {deleting ? 'Удаление...' : 'Удалить тренировку'}
+        </button>
       </div>
     </Layout>
   );

@@ -67,7 +67,8 @@ function WorkoutsBarChart({ sessions }: { sessions: any[] }) {
       const d = new Date(s.date);
       return d >= start && d < end;
     }).length;
-    const label = weeksAgo === 0 ? 'Эта нед.' : weeksAgo === 1 ? 'Прош.' : `${weeksAgo} н. н.`;
+    const monthShort = start.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '');
+    const label = `${start.getDate()}-${end.getDate()} ${monthShort}`;
     return { label, count };
   });
 

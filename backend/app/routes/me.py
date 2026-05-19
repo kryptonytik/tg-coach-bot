@@ -114,6 +114,16 @@ def register_as_client():
                 setattr(q, field, questionnaire_data[field])
         db.session.add(q)
 
+        q_weight = questionnaire_data.get("weight")
+        if q_weight is not None:
+            try:
+                baseline = BodyMeasurement(
+                    client_id=client.id, date=date.today(), weight=float(q_weight)
+                )
+                db.session.add(baseline)
+            except (ValueError, TypeError):
+                pass
+
     db.session.commit()
     return jsonify(client.to_dict()), 201
 

@@ -23,7 +23,9 @@ def get_stats():
     today = date.today()
     week_start = today - timedelta(days=today.weekday())  # Monday
 
-    base_q = Client.query.filter_by(trainer_id=trainer.id)
+    base_q = Client.query.filter_by(trainer_id=trainer.id).filter(
+        db.or_(Client.user_id == None, Client.user_id != trainer.id)
+    )
 
     total_clients = base_q.count()
     active_clients = base_q.filter_by(is_active=True).count()

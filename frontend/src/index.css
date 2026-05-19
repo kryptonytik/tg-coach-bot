@@ -103,6 +103,12 @@ input, textarea, select {
   font-family: inherit;
 }
 
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2.5px rgba(36, 129, 204, 0.35);
+  caret-color: #2481cc;
+}
+
 /* Skeleton animation */
 @keyframes pulse {
   0% { opacity: 1; }

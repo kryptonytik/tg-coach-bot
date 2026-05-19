@@ -57,6 +57,7 @@ export const workoutsApi = {
   updateSession: (id: number, data: any) => api.patch<WorkoutSession>(`/api/workouts/sessions/${id}`, data).then(r => r.data),
   addSet: (sessionId: number, data: any) => api.post<WorkoutSet>(`/api/workouts/sessions/${sessionId}/sets`, data).then(r => r.data),
   deleteSet: (sessionId: number, setId: number) => api.delete(`/api/workouts/sessions/${sessionId}/sets/${setId}`),
+  deleteSession: (id: number) => api.delete(`/api/workouts/sessions/${id}`).then(r => r.data),
   getExerciseHistory: (clientId: number, exerciseId: number) =>
     api.get<any[]>('/api/workouts/exercise-history', { params: { client_id: clientId, exercise_id: exerciseId, limit: 3 } }).then(r => r.data),
   getSessionProgress: (id: number) => api.get<any>(`/api/workouts/sessions/${id}/progress`).then(r => r.data),
