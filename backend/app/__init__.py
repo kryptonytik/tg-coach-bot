@@ -17,9 +17,16 @@ def create_app(config_name=None) -> Flask:
     app.config.from_object(config_by_name[config_name])
 
     # ── Extensions ────────────────────────────────────────────────────────────
+    dev_mode = app.config.get("DEV_MODE", False)
+    allowed_origins = (
+        "*" if dev_mode else [
+            "https://tg-coach-bot.vercel.app",
+            "https://web.telegram.org",
+        ]
+    )
     CORS(
         app,
-        origins="*",
+        origins=allowed_origins,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     )
