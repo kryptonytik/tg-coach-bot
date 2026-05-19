@@ -67,7 +67,8 @@ function WorkoutsBarChart({ sessions }: { sessions: any[] }) {
       const d = new Date(s.date);
       return d >= start && d < end;
     }).length;
-    const monthShort = start.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '');
+    const sameMonth = start.getMonth() === end.getMonth();
+    const monthShort = (sameMonth ? start : end).toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '');
     const label = `${start.getDate()}-${end.getDate()} ${monthShort}`;
     return { label, count };
   });
@@ -178,7 +179,7 @@ export default function ClientDashboard({ currentUser }: Props) {
                     icon="📅"
                     color="#1e8e3e"
                   />
-                  <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 10, color: '#ccc' }}>
+                  <span style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 12, color: '#1e8e3e', fontWeight: 700 }}>
                     {activeChart === 'workouts' ? '▴' : '▾'}
                   </span>
                 </div>
@@ -214,7 +215,7 @@ export default function ClientDashboard({ currentUser }: Props) {
                       : '#aaa'
                     }
                   />
-                  <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 10, color: '#ccc' }}>
+                  <span style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 12, color: '#9334e9', fontWeight: 700 }}>
                     {activeChart === 'weight' ? '▴' : '▾'}
                   </span>
                 </div>

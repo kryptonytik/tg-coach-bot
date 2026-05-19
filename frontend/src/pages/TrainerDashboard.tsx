@@ -80,7 +80,7 @@ export default function TrainerDashboard() {
       </div>
 
       {/* Menu */}
-      <div>
+      <div style={{ width: '100%' }}>
         <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600, color: '#555' }}>
           Действия
         </h2>
@@ -168,55 +168,55 @@ export default function TrainerDashboard() {
           <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
         </div>
 
-        {/* Section: Я */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {/* Section: МОИ ТРЕНИРОВКИ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
             <button
               onClick={() => navigate('/my-workout')}
               style={{
+                flex: 1,
                 background: '#9334e9',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 14,
-                padding: '16px 20px',
-                fontSize: 17,
+                padding: '16px 12px',
+                fontSize: 15,
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                justifyContent: 'center',
+                gap: 8,
                 minHeight: 60,
-                width: '100%',
-                boxSizing: 'border-box',
+                minWidth: 0,
               }}
             >
-              <span style={{ fontSize: 22 }}>💪</span>
-              <span style={{ flex: 1 }}>Тренировка</span>
-              <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
+              <span style={{ fontSize: 20 }}>💪</span>
+              <span>Тренировка</span>
             </button>
 
             <button
               onClick={() => navigate('/my-workout-history')}
               style={{
+                flex: 1,
                 background: '#7b1fa2',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 14,
-                padding: '16px 20px',
-                fontSize: 17,
+                padding: '16px 12px',
+                fontSize: 15,
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                justifyContent: 'center',
+                gap: 8,
                 minHeight: 60,
-                width: '100%',
-                boxSizing: 'border-box',
+                minWidth: 0,
               }}
             >
-              <span style={{ fontSize: 22 }}>📋</span>
-              <span style={{ flex: 1 }}>История</span>
-              <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
+              <span style={{ fontSize: 20 }}>📋</span>
+              <span>История</span>
             </button>
           </div>
 

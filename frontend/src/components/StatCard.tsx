@@ -21,9 +21,23 @@ export default function StatCard({ label, value, icon, color = '#2481cc', subtit
         minWidth: 0,
       }}
     >
-      {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
-      <span style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
-      <span style={{ fontSize: 12, color: '#666', lineHeight: 1.3 }}>{label}</span>
+      {icon && (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            fontSize: 22,
+            lineHeight: 1,
+          }}
+        >
+          {icon}
+        </span>
+      )}
+      <span style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
+      <span style={{ fontSize: 11, color: '#666', lineHeight: 1.3 }}>{label}</span>
       {subtitle && <span style={{ fontSize: 11, color: subtitleColor ?? '#aaa', lineHeight: 1.3 }}>{subtitle}</span>}
     </div>
   );
