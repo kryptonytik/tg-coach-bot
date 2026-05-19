@@ -183,6 +183,66 @@ def get_session(session_id: int):
     return jsonify(session.to_dict(include_sets=True))
 
 
+@workouts_bp.get("/sessions/<int:session_id>/detail")
+@auth_required
+def get_session_detail(session_id: int):
+    """
+    GET /api/workouts/sessions/<id>/detail
+    Returns full session with exercises grouped by exercise_id.
+    Trainers see all sessions; clients see only their own.
+    """
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
+
+    # Group sets by exercise, preserving set order
+    sets = (
+        WorkoutSet.query.filter_by(session_id=session_id)
+        .order_by(WorkoutSet.exercise_id, WorkoutSet.set_number)
+        .all()
+    )
+
+    exercises_map = {}
+    exercises_order = []
+    for ws in sets:
+        if ws.exercise_id not in exercises_map:
+            ex = ws.exercise
+            exercises_map[ws.exercise_id] = {
+                "exercise_id": ws.exercise_id,
+                "exercise_name": ex.name if ex else None,
+                "muscle_group": ex.muscle_group if ex else None,
+                "sets": [],
+            }
+            exercises_order.append(ws.exercise_id)
+        exercises_map[ws.exercise_id]["sets"].append({
+            "id": ws.id,
+            "set_number": ws.set_number,
+            "weight": ws.weight,
+            "reps": ws.reps,
+        })
+
+    return jsonify({
+        "id": session.id,
+        "date": session.date.isoformat() if session.date else None,
+        "workout_type": session.workout_type,
+        "category": session.category,
+        "is_completed": session.is_completed,
+        "client_id": session.client_id,
+        "exercises": [exercises_map[eid] for eid in exercises_order],
+    })
+
+
 @workouts_bp.patch("/sessions/<int:session_id>")
 @auth_required
 def update_session(session_id: int):

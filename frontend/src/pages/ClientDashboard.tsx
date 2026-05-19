@@ -48,7 +48,7 @@ export default function ClientDashboard({ currentUser }: Props) {
           }}
         >
           <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-            Привет, {currentUser.first_name}! 💪
+            Привет, {currentUser.client?.first_name || currentUser.first_name}! 💪
           </div>
           <div style={{ fontSize: 14, opacity: 0.85 }}>
             {new Date().toLocaleDateString('ru-RU', {
@@ -97,22 +97,22 @@ export default function ClientDashboard({ currentUser }: Props) {
                 icon="🎯"
                 color="#e37400"
               />
-              {stats?.weight_to_go !== null && stats?.weight_to_go !== undefined ? (
-                <StatCard
-                  label="До цели"
-                  value={`${Math.abs(stats.weight_to_go).toFixed(1)} кг`}
-                  icon="⚖️"
-                  color="#9334e9"
-                  subtitle={stats.current_weight != null ? `${stats.current_weight} кг сейчас` : undefined}
-                />
-              ) : (
-                <StatCard
-                  label="Последний вес"
-                  value={lastWeight}
-                  icon="⚖️"
-                  color="#9334e9"
-                />
-              )}
+              <StatCard
+                label="Текущий вес"
+                value={stats?.current_weight != null ? `${stats.current_weight} кг` : '—'}
+                icon="⚖️"
+                color="#9334e9"
+                subtitle={
+                  stats?.weight_to_go != null && stats?.current_weight != null
+                    ? `${stats.weight_to_go > 0 ? '+' : ''}${stats.weight_to_go.toFixed(1)} кг до цели`
+                    : undefined
+                }
+                subtitleColor={
+                  stats?.goal === 'weight_loss' ? '#1e8e3e'
+                  : stats?.goal === 'weight_gain' ? '#2481cc'
+                  : '#aaa'
+                }
+              />
             </div>
           )}
         </div>

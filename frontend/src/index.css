@@ -97,11 +97,10 @@ button {
   cursor: pointer;
 }
 
-input,
-select,
-textarea {
+input, textarea, select {
+  font-size: 16px !important;
+  touch-action: manipulation;
   font-family: inherit;
-  font-size: 16px; /* Prevents iOS zoom on focus */
 }
 
 /* Skeleton animation */

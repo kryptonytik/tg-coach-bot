@@ -154,6 +154,32 @@ export default function TrainerDashboard() {
             <span>Добавить подопечного</span>
             <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
           </button>
+
+          <div style={{ marginTop: 8, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+            <button
+              onClick={() => navigate('/my-workout')}
+              style={{
+                background: '#fff',
+                color: '#9334e9',
+                border: '2px solid #9334e9',
+                borderRadius: 14,
+                padding: '16px 20px',
+                fontSize: 17,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 60,
+                textAlign: 'left',
+                width: '100%',
+              }}
+            >
+              <span style={{ fontSize: 24 }}>💪</span>
+              <span>Моя тренировка</span>
+              <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

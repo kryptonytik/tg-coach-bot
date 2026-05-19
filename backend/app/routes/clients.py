@@ -1,11 +1,15 @@
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
+from sqlalchemy import func
 
 from app.auth import trainer_required
 from app.extensions import db
+from app.models.body_measurement import BodyMeasurement
 from app.models.client import Client, VALID_GOALS
 from app.models.questionnaire import Questionnaire
+from app.models.workout import WorkoutSession
+from app.models.workout_set import WorkoutSet
 
 clients_bp = Blueprint("clients", __name__, url_prefix="/api/clients")
 
@@ -167,6 +171,73 @@ def update_client(client_id: int):
 
     db.session.commit()
     return jsonify(client.to_dict())
+
+
+@clients_bp.get("/<int:client_id>/workout-history")
+@trainer_required
+def get_client_workout_history(client_id: int):
+    """
+    GET /api/clients/<id>/workout-history?limit=20&offset=0
+    Returns completed sessions for this client ordered by date desc.
+    Each item: {id, date, workout_type, category, sets_count, exercises_count}
+    """
+    trainer = g.current_user
+    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
+
+    limit = min(request.args.get("limit", 20, type=int), 100)
+    offset = request.args.get("offset", 0, type=int)
+
+    sessions = (
+        WorkoutSession.query
+        .filter_by(client_id=client.id, is_completed=True)
+        .order_by(WorkoutSession.date.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+    result = []
+    for s in sessions:
+        sets_count = WorkoutSet.query.filter_by(session_id=s.id).count()
+        exercises_count = (
+            db.session.query(func.count(func.distinct(WorkoutSet.exercise_id)))
+            .filter(WorkoutSet.session_id == s.id)
+            .scalar()
+        ) or 0
+        result.append({
+            "id": s.id,
+            "date": s.date.isoformat() if s.date else None,
+            "workout_type": s.workout_type,
+            "category": s.category,
+            "sets_count": sets_count,
+            "exercises_count": exercises_count,
+        })
+
+    return jsonify(result)
+
+
+@clients_bp.get("/<int:client_id>/measurements")
+@trainer_required
+def get_client_measurements(client_id: int):
+    """
+    GET /api/clients/<id>/measurements
+    Returns last 30 BodyMeasurement records for this client ordered by date desc.
+    """
+    trainer = g.current_user
+    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
+
+    measurements = (
+        BodyMeasurement.query
+        .filter_by(client_id=client.id)
+        .order_by(BodyMeasurement.date.desc())
+        .limit(30)
+        .all()
+    )
+    return jsonify([m.to_dict() for m in measurements])
 
 
 @clients_bp.delete("/<int:client_id>")

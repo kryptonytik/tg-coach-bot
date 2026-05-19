@@ -4,9 +4,10 @@ interface StatCardProps {
   icon?: string;
   color?: string;
   subtitle?: string;
+  subtitleColor?: string;
 }
 
-export default function StatCard({ label, value, icon, color = '#2481cc', subtitle }: StatCardProps) {
+export default function StatCard({ label, value, icon, color = '#2481cc', subtitle, subtitleColor }: StatCardProps) {
   return (
     <div
       style={{
@@ -23,7 +24,7 @@ export default function StatCard({ label, value, icon, color = '#2481cc', subtit
       {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
       <span style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
       <span style={{ fontSize: 12, color: '#666', lineHeight: 1.3 }}>{label}</span>
-      {subtitle && <span style={{ fontSize: 11, color: '#aaa', lineHeight: 1.3 }}>{subtitle}</span>}
+      {subtitle && <span style={{ fontSize: 11, color: subtitleColor ?? '#aaa', lineHeight: 1.3 }}>{subtitle}</span>}
     </div>
   );
 }

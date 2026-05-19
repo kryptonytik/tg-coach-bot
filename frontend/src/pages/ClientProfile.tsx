@@ -1,10 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientsApi } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import GoalBadge from '../components/GoalBadge';
 import Layout from '../components/Layout';
 import type { Client, Goal } from '../types';
+
+type TabType = 'profile' | 'workouts' | 'measurements';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  chest_biceps: 'Грудь — Бицепс',
+  back_triceps: 'Спина — Трицепс',
+  legs_shoulders: 'Ноги — Плечи',
+  full_body: 'Всё тело',
+  functional: 'Функциональная',
+  cardio: 'Кардио',
+  hiit: 'ВИИТ',
+};
+
+const WORKOUT_TYPE_LABELS: Record<string, string> = {
+  strength: 'Силовая',
+  functional: 'Функциональная',
+};
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    weekday: 'short',
+  });
+}
+
+function MeasurementChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span
+      style={{
+        background: '#f0f7ff',
+        color: '#2481cc',
+        borderRadius: 8,
+        padding: '4px 10px',
+        fontSize: 13,
+        fontWeight: 600,
+      }}
+    >
+      {label}: {value}
+    </span>
+  );
+}
 
 const GOAL_OPTIONS: { value: Goal; label: string }[] = [
   { value: 'weight_gain', label: 'Набор массы' },
@@ -96,6 +139,32 @@ export default function ClientProfile() {
   const [editActive, setEditActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
+  const [workoutHistory, setWorkoutHistory] = useState<any[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(false);
+  const [workoutsLoaded, setWorkoutsLoaded] = useState(false);
+  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [measLoading, setMeasLoading] = useState(false);
+  const [measLoaded, setMeasLoaded] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'workouts' && !workoutsLoaded) {
+      setWorkoutsLoading(true);
+      clientsApi.getWorkoutHistory(clientId)
+        .then(data => { setWorkoutHistory(data); setWorkoutsLoaded(true); })
+        .catch(() => {})
+        .finally(() => setWorkoutsLoading(false));
+    }
+    if (activeTab === 'measurements' && !measLoaded) {
+      setMeasLoading(true);
+      clientsApi.getMeasurements(clientId)
+        .then(data => { setMeasurements(data); setMeasLoaded(true); })
+        .catch(() => {})
+        .finally(() => setMeasLoading(false));
+    }
+  }, [activeTab, clientId, workoutsLoaded, measLoaded]);
 
   const startEdit = () => {
     if (client) {
@@ -325,78 +394,222 @@ export default function ClientProfile() {
           </div>
         )}
 
-        {/* Questionnaire */}
-        {q && (
+        {/* Tab bar */}
+        <div
+          style={{
+            display: 'flex',
+            background: '#fff',
+            borderRadius: 12,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          {([
+            { key: 'profile', label: 'Профиль' },
+            { key: 'workouts', label: 'Тренировки' },
+            { key: 'measurements', label: 'Замеры' },
+          ] as { key: TabType; label: string }[]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1,
+                padding: '12px 6px',
+                border: 'none',
+                background: activeTab === tab.key ? '#2481cc' : '#fff',
+                color: activeTab === tab.key ? '#fff' : '#555',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Profile tab */}
+        {activeTab === 'profile' && (
           <>
-            <AccordionSection title="Физическая подготовка" defaultOpen>
-              {q.fitness_level != null && <FitnessLevelBar level={q.fitness_level} />}
-              <div style={{ marginTop: 8 }}>
-                <InfoRow label="Тренировался раньше" value={q.had_training_before === true ? 'Да' : q.had_training_before === false ? 'Нет' : null} />
-                <InfoRow label="Чем занимался" value={q.previous_sports} />
-                <InfoRow label="С последней тренировки" value={q.time_since_last_workout} />
-              </div>
-            </AccordionSection>
+            {/* Questionnaire */}
+            {q && (
+              <>
+                <AccordionSection title="Физическая подготовка" defaultOpen>
+                  {q.fitness_level != null && <FitnessLevelBar level={q.fitness_level} />}
+                  <div style={{ marginTop: 8 }}>
+                    <InfoRow label="Тренировался раньше" value={q.had_training_before === true ? 'Да' : q.had_training_before === false ? 'Нет' : null} />
+                    <InfoRow label="Чем занимался" value={q.previous_sports} />
+                    <InfoRow label="С последней тренировки" value={q.time_since_last_workout} />
+                  </div>
+                </AccordionSection>
 
-            <AccordionSection title="Здоровье">
-              <InfoRow label="Боли в суставах" value={q.joint_pain} />
-              <InfoRow label="Давление" value={q.pressure_issues} />
-              <InfoRow label="Операции" value={q.surgeries} />
-              <InfoRow label="Патологии" value={q.congenital_conditions} />
-              <InfoRow label="Проблемы с ЖКТ" value={q.gi_issues} />
-              <InfoRow label="Позвоночник" value={q.spine_conditions} />
-              <InfoRow label="Боли в груди" value={q.chest_pain} />
-              {!q.joint_pain && !q.pressure_issues && !q.surgeries && !q.congenital_conditions && !q.gi_issues && !q.spine_conditions && !q.chest_pain && (
-                <div style={{ padding: '10px 0', fontSize: 13, color: '#aaa' }}>Нет данных о здоровье</div>
+                <AccordionSection title="Здоровье">
+                  <InfoRow label="Боли в суставах" value={q.joint_pain} />
+                  <InfoRow label="Давление" value={q.pressure_issues} />
+                  <InfoRow label="Операции" value={q.surgeries} />
+                  <InfoRow label="Патологии" value={q.congenital_conditions} />
+                  <InfoRow label="Проблемы с ЖКТ" value={q.gi_issues} />
+                  <InfoRow label="Позвоночник" value={q.spine_conditions} />
+                  <InfoRow label="Боли в груди" value={q.chest_pain} />
+                  {!q.joint_pain && !q.pressure_issues && !q.surgeries && !q.congenital_conditions && !q.gi_issues && !q.spine_conditions && !q.chest_pain && (
+                    <div style={{ padding: '10px 0', fontSize: 13, color: '#aaa' }}>Нет данных о здоровье</div>
+                  )}
+                </AccordionSection>
+
+                <AccordionSection title="Параметры">
+                  <InfoRow label="Возраст" value={q.age != null ? `${q.age} лет` : null} />
+                  <InfoRow label="Рост" value={q.height != null ? `${q.height} см` : null} />
+                  <InfoRow label="Вес" value={q.weight != null ? `${q.weight} кг` : null} />
+                  <InfoRow label="Добавки" value={q.supplements} />
+                </AccordionSection>
+              </>
+            )}
+
+            {/* Actions */}
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={() => navigate('/workout')}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  border: 'none',
+                  borderRadius: 12,
+                  background: '#2481cc',
+                  color: '#fff',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginBottom: 10,
+                }}
+              >
+                🏋️ Записать тренировку
+              </button>
+              {client.is_active && (
+                <button
+                  onClick={handleDeactivate}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: 12,
+                    background: '#fff',
+                    color: '#999',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Деактивировать
+                </button>
               )}
-            </AccordionSection>
-
-            <AccordionSection title="Параметры">
-              <InfoRow label="Возраст" value={q.age != null ? `${q.age} лет` : null} />
-              <InfoRow label="Рост" value={q.height != null ? `${q.height} см` : null} />
-              <InfoRow label="Вес" value={q.weight != null ? `${q.weight} кг` : null} />
-              <InfoRow label="Добавки" value={q.supplements} />
-            </AccordionSection>
+            </div>
           </>
         )}
 
-        {/* Actions */}
-        <div style={{ marginTop: 8 }}>
-          <button
-            onClick={() => navigate('/workout')}
-            style={{
-              width: '100%',
-              padding: '14px',
-              border: 'none',
-              borderRadius: 12,
-              background: '#2481cc',
-              color: '#fff',
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: 10,
-            }}
-          >
-            🏋️ Записать тренировку
-          </button>
-          {client.is_active && (
-            <button
-              onClick={handleDeactivate}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e0e0e0',
-                borderRadius: 12,
-                background: '#fff',
-                color: '#999',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Деактивировать
-            </button>
-          )}
-        </div>
+        {/* Workouts tab */}
+        {activeTab === 'workouts' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {workoutsLoading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} style={{ background: '#e8e8e8', borderRadius: 12, height: 80 }} />
+              ))
+            ) : workoutHistory.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: '30px 0' }}>Тренировок нет</div>
+            ) : (
+              workoutHistory.map((session: any) => {
+                const setCount: number = session.sets?.length ?? session.sets_count ?? 0;
+                const categoryLabel = session.category ? (CATEGORY_LABELS[session.category] ?? session.category) : null;
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => navigate('/workout-detail/' + session.id)}
+                    style={{
+                      background: '#fff',
+                      borderRadius: 12,
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#444', marginBottom: 6 }}>
+                      {formatDate(session.date)}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: '3px 10px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background: session.workout_type === 'strength' ? '#e8f0fe' : '#fff3e0',
+                          color: session.workout_type === 'strength' ? '#2481cc' : '#e37400',
+                        }}
+                      >
+                        {WORKOUT_TYPE_LABELS[session.workout_type] ?? session.workout_type}
+                      </span>
+                      {categoryLabel && <span style={{ fontSize: 13, color: '#666' }}>{categoryLabel}</span>}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#888' }}>
+                      {setCount} {setCount === 1 ? 'подход' : setCount >= 2 && setCount <= 4 ? 'подхода' : 'подходов'}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* Measurements tab */}
+        {activeTab === 'measurements' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {measLoading ? (
+              [1, 2, 3].map(i => (
+                <div key={i} style={{ background: '#e8e8e8', borderRadius: 12, height: 70 }} />
+              ))
+            ) : measurements.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: '30px 0' }}>Замеров нет</div>
+            ) : (
+              measurements.map((m: any) => {
+                const chips: { label: string; value: string }[] = [];
+                if (m.weight != null) chips.push({ label: 'Вес', value: `${m.weight} кг` });
+                if (m.chest != null) chips.push({ label: 'Грудь', value: `${m.chest} см` });
+                if (m.waist != null) chips.push({ label: 'Талия', value: `${m.waist} см` });
+                if (m.hips != null) chips.push({ label: 'Бёдра', value: `${m.hips} см` });
+                if (m.arm != null) chips.push({ label: 'Рука', value: `${m.arm} см` });
+                if (m.thigh != null) chips.push({ label: 'Бедро', value: `${m.thigh} см` });
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      background: '#fff',
+                      borderRadius: 12,
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                      padding: '14px 16px',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#444', marginBottom: 8 }}>
+                      {new Date(m.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                    {chips.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {chips.map(c => (
+                          <MeasurementChip key={c.label} label={c.label} value={c.value} />
+                        ))}
+                      </div>
+                    )}
+                    {m.notes && (
+                      <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic', marginTop: 6 }}>
+                        {m.notes}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -75,6 +75,12 @@ export default function WorkoutFlow({ currentUser }: Props) {
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Quick fill state
+  const [quickFill, setQuickFill] = useState(false);
+  const [qfWeight, setQfWeight] = useState('');
+  const [qfReps, setQfReps] = useState('');
+  const [qfSets, setQfSets] = useState('');
+
   // Load clients on mount (trainer mode only)
   useEffect(() => {
     if (isClientMode) {
@@ -209,6 +215,29 @@ export default function WorkoutFlow({ currentUser }: Props) {
     }
   };
 
+  // Quick fill: add multiple sets at once
+  const handleQuickFill = async () => {
+    const w = qfWeight !== '' ? parseFloat(qfWeight) : null;
+    const r = qfReps !== '' ? parseInt(qfReps) : null;
+    const n = parseInt(qfSets) || 1;
+    for (let i = 0; i < n; i++) {
+      await handleAddSet(w, r);
+    }
+    setQuickFill(false);
+    setQfWeight('');
+    setQfReps('');
+    setQfSets('');
+  };
+
+  // Cancel resume — go back to type selection
+  const handleCancelResume = () => {
+    setIsResumingSession(false);
+    setSession(null);
+    setSessionSets([]);
+    setSelectedExercise(null);
+    setStep('SELECT_TYPE');
+  };
+
   // Complete workout
   const handleComplete = async () => {
     if (!session) return;
@@ -285,7 +314,7 @@ export default function WorkoutFlow({ currentUser }: Props) {
               padding: '12px 14px',
               border: '1px solid #e0e0e0',
               borderRadius: 10,
-              fontSize: 15,
+              fontSize: 16,
               boxSizing: 'border-box',
               background: '#fff',
             }}
@@ -490,8 +519,24 @@ export default function WorkoutFlow({ currentUser }: Props) {
         }}
       >
         {isResumingSession && (
-          <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Продолжаем тренировку от сегодня
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, opacity: 0.85, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Продолжаем тренировку от сегодня
+            </div>
+            <button
+              onClick={handleCancelResume}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: 12,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                padding: '4px 0',
+              }}
+            >
+              Выбрать другую тренировку
+            </button>
           </div>
         )}
         <div style={{ fontWeight: 700, fontSize: 16 }}>
@@ -614,6 +659,105 @@ export default function WorkoutFlow({ currentUser }: Props) {
             setNumber={currentExerciseSets.length + 1}
             onSave={handleAddSet}
           />
+
+          {/* Quick fill */}
+          <div style={{ marginTop: 10 }}>
+            <button
+              onClick={() => setQuickFill(v => !v)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2481cc',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '4px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              ⚡ Заполнить несколько подходов
+              <span style={{ fontSize: 12, transform: quickFill ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+            </button>
+            {quickFill && (
+              <div style={{ marginTop: 8, padding: '12px', background: '#f0f7ff', borderRadius: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>Вес (кг)</div>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={qfWeight}
+                      onChange={e => setQfWeight(e.target.value)}
+                      placeholder="80"
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #d0d0d0',
+                        borderRadius: 8,
+                        fontSize: 16,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>Повторений</div>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={qfReps}
+                      onChange={e => setQfReps(e.target.value)}
+                      placeholder="8"
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #d0d0d0',
+                        borderRadius: 8,
+                        fontSize: 16,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>Подходов</div>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={qfSets}
+                      onChange={e => setQfSets(e.target.value)}
+                      placeholder="3"
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #d0d0d0',
+                        borderRadius: 8,
+                        fontSize: 16,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleQuickFill}
+                  disabled={!qfSets}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: 'none',
+                    borderRadius: 8,
+                    background: qfSets ? '#2481cc' : '#aaa',
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: qfSets ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Добавить все подходы
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Current sets */}
           {currentExerciseSets.length > 0 && (

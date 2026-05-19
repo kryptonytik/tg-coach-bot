@@ -87,3 +87,33 @@ def get_active_session(client_id: int):
     )
 
     return jsonify({"session": session.to_dict() if session else None})
+
+
+@trainer_bp.get("/my-client-profile")
+@trainer_required
+def get_my_client_profile():
+    """
+    GET /api/trainer/my-client-profile
+    Returns or creates a personal client profile for the trainer
+    (user_id = trainer.id AND trainer_id = trainer.id).
+    Allows the trainer to use the standard workout flow with themselves as client.
+    """
+    trainer = g.current_user
+
+    client = Client.query.filter_by(
+        user_id=trainer.id, trainer_id=trainer.id
+    ).first()
+
+    if client is None:
+        client = Client(
+            user_id=trainer.id,
+            trainer_id=trainer.id,
+            first_name=trainer.first_name,
+            last_name=trainer.last_name,
+            goal="maintenance",
+            is_active=True,
+        )
+        db.session.add(client)
+        db.session.commit()
+
+    return jsonify(client.to_dict(include_questionnaire=False))

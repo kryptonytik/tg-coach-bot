@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { meApi } from '../api/client';
 import Layout from '../components/Layout';
 
@@ -46,6 +47,7 @@ function WorkoutTypeBadge({ type }: { type: string }) {
 }
 
 export default function WorkoutHistoryPage() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -93,12 +95,17 @@ export default function WorkoutHistoryPage() {
             return (
               <div
                 key={session.id}
+                onClick={() => navigate('/workout-detail/' + session.id)}
                 style={{
                   background: '#fff',
                   borderRadius: 12,
                   boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                   padding: '14px 16px',
+                  cursor: 'pointer',
                 }}
+                onPointerDown={e => { (e.currentTarget as HTMLDivElement).style.opacity = '0.75'; }}
+                onPointerUp={e => { (e.currentTarget as HTMLDivElement).style.opacity = '1'; }}
+                onPointerLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = '1'; }}
               >
                 <div
                   style={{

@@ -44,7 +44,7 @@ const inputStyle: React.CSSProperties = {
   padding: '12px 14px',
   border: '1px solid #e0e0e0',
   borderRadius: 10,
-  fontSize: 15,
+  fontSize: 16,
   background: '#fff',
   boxSizing: 'border-box',
   color: '#000',
@@ -299,16 +299,6 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
                 ))}
               </div>
             </FieldGroup>
-            <FieldGroup label="Целевой вес (кг)">
-              <input
-                style={inputStyle}
-                type="number"
-                inputMode="decimal"
-                value={form.target_weight}
-                onChange={e => set('target_weight', e.target.value)}
-                placeholder="70"
-              />
-            </FieldGroup>
           </>
         )}
 
@@ -512,6 +502,18 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
                 onChange={e => set('weight', e.target.value)}
                 placeholder="70"
               />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Целевой вес (кг)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                className="form-input"
+                placeholder="Напр. 80"
+                value={form.target_weight}
+                onChange={e => set('target_weight', e.target.value)}
+              />
+              <span style={{ fontSize: 12, color: '#8e8e93', marginTop: 4, display: 'block' }}>Ваш желаемый вес</span>
             </div>
           </>
         )}

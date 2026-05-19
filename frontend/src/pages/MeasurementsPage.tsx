@@ -42,7 +42,7 @@ const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   border: '1px solid #e0e0e0',
   borderRadius: 10,
-  fontSize: 15,
+  fontSize: 16,
   background: '#fff',
   boxSizing: 'border-box',
   color: '#000',
@@ -224,14 +224,16 @@ export default function MeasurementsPage({ currentUser }: MeasurementsPageProps 
                 </div>
               )}
 
-              <FieldGroup label="Дата">
+              <div className="form-group">
+                <label className="form-label">Дата</label>
                 <input
-                  style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', minWidth: 0, flex: 1 }}
                   type="date"
                   value={form.date}
                   onChange={e => set('date', e.target.value)}
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box', display: 'block' }}
                 />
-              </FieldGroup>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <FieldGroup label="Вес (кг)">
