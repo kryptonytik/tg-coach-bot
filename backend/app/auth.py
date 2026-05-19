@@ -74,25 +74,42 @@ def _get_trainer_ids():
 def _get_or_create_user(telegram_id: str, user_data: dict, role: str = "client"):
     """Fetch existing user or create a new one from Telegram data."""
     from app.models.user import User
+    from app.models.client import Client
 
     trainer_ids = _get_trainer_ids()
     if str(telegram_id) in trainer_ids:
         role = "trainer"
 
+    tg_username = user_data.get("username")
+
     user = User.query.filter_by(telegram_id=str(telegram_id)).first()
     if user is None:
         user = User(
             telegram_id=str(telegram_id),
-            username=user_data.get("username"),
+            username=tg_username,
+            telegram_username=tg_username,
             first_name=user_data.get("first_name", "Unknown"),
             last_name=user_data.get("last_name"),
             role=role,
         )
         db.session.add(user)
-        db.session.commit()
-    elif str(telegram_id) in trainer_ids and user.role != "trainer":
-        user.role = "trainer"
-        db.session.commit()
+        db.session.flush()
+    else:
+        if str(telegram_id) in trainer_ids and user.role != "trainer":
+            user.role = "trainer"
+        # Keep telegram_username up to date
+        if tg_username is not None:
+            user.telegram_username = tg_username
+
+    # Link any manually-created client record that matches this username
+    if tg_username:
+        unlinked_client = Client.query.filter_by(
+            telegram_username=tg_username, user_id=None
+        ).first()
+        if unlinked_client is not None:
+            unlinked_client.user_id = user.id
+
+    db.session.commit()
     return user
 
 

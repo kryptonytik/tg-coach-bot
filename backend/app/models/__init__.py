@@ -4,6 +4,7 @@ from app.models.questionnaire import Questionnaire
 from app.models.exercise import Exercise
 from app.models.workout import WorkoutSession
 from app.models.workout_set import WorkoutSet
+from app.models.body_measurement import BodyMeasurement
 
 __all__ = [
     "User",
@@ -12,4 +13,5 @@ __all__ = [
     "Exercise",
     "WorkoutSession",
     "WorkoutSet",
+    "BodyMeasurement",
 ]

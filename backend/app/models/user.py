@@ -8,6 +8,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     telegram_id = db.Column(db.String(64), unique=True, nullable=False, index=True)
     username = db.Column(db.String(128), nullable=True)
+    telegram_username = db.Column(db.String(128), nullable=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=True)
     role = db.Column(db.String(16), nullable=False, default="client")  # 'trainer' or 'client'
@@ -26,6 +27,7 @@ class User(db.Model):
             "id": self.id,
             "telegram_id": self.telegram_id,
             "username": self.username,
+            "telegram_username": self.telegram_username,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "role": self.role,

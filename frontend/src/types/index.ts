@@ -68,3 +68,33 @@ export interface TrainerStats {
   sessions_today: number;
   sessions_this_week: number;
 }
+
+export interface CurrentUser {
+  id: number;
+  telegram_id: string;
+  first_name: string;
+  last_name: string | null;
+  telegram_username: string | null;
+  role: 'trainer' | 'client';
+  client: Client | null;
+}
+
+export interface BodyMeasurement {
+  id: number;
+  client_id: number;
+  date: string;
+  weight: number | null;
+  chest: number | null;
+  waist: number | null;
+  hips: number | null;
+  arm: number | null;
+  thigh: number | null;
+  notes: string | null;
+}
+
+export interface ClientStats {
+  sessions_this_month: number;
+  sessions_this_week: number;
+  goal: Goal | null;
+  last_measurement: { weight: number; date: string } | null;
+}

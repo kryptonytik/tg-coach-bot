@@ -2,6 +2,7 @@ from app.routes.trainer import trainer_bp
 from app.routes.clients import clients_bp
 from app.routes.workouts import workouts_bp
 from app.routes.exercises import exercises_bp
+from app.routes.me import me_bp
 
 
 def register_blueprints(app):
@@ -10,3 +11,4 @@ def register_blueprints(app):
     app.register_blueprint(clients_bp)
     app.register_blueprint(workouts_bp)
     app.register_blueprint(exercises_bp)
+    app.register_blueprint(me_bp)

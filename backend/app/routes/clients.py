@@ -77,6 +77,7 @@ def create_client():
         first_name=first_name,
         last_name=(data.get("last_name") or "").strip() or None,
         phone=(data.get("phone") or "").strip() or None,
+        telegram_username=(data.get("telegram_username") or "").strip() or None,
         goal=goal,
     )
     db.session.add(client)

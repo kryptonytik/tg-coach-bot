@@ -13,6 +13,7 @@ class Client(db.Model):
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=True)
     phone = db.Column(db.String(32), nullable=True)
+    telegram_username = db.Column(db.String(128), nullable=True, index=True)
     goal = db.Column(db.String(32), nullable=False, default="maintenance")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(
@@ -54,6 +55,7 @@ class Client(db.Model):
             "first_name": self.first_name,
             "last_name": self.last_name,
             "phone": self.phone,
+            "telegram_username": self.telegram_username,
             "goal": self.goal,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,

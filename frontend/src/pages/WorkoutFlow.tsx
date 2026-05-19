@@ -4,7 +4,7 @@ import { clientsApi, workoutsApi, exercisesApi, trainerApi } from '../api/client
 import GoalBadge from '../components/GoalBadge';
 import ExerciseSetRow from '../components/ExerciseSetRow';
 import Layout from '../components/Layout';
-import type { Client, Exercise, WorkoutSession, WorkoutSet, WorkoutType } from '../types';
+import type { Client, CurrentUser, Exercise, WorkoutSession, WorkoutSet, WorkoutType } from '../types';
 
 type FlowStep = 'SELECT_CLIENT' | 'CHECK_ACTIVE' | 'SELECT_TYPE' | 'SELECT_CATEGORY' | 'RECORD_SETS' | 'DONE';
 
@@ -42,16 +42,23 @@ function groupSetsByExercise(sets: WorkoutSet[]): Map<number, WorkoutSet[]> {
   return map;
 }
 
-export default function WorkoutFlow() {
+interface Props {
+  currentUser: CurrentUser;
+}
+
+export default function WorkoutFlow({ currentUser }: Props) {
   const navigate = useNavigate();
-  const [step, setStep] = useState<FlowStep>('SELECT_CLIENT');
+  const isClientMode = currentUser.role === 'client';
+  const [step, setStep] = useState<FlowStep>(isClientMode ? 'CHECK_ACTIVE' : 'SELECT_CLIENT');
 
   // Data state
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(
+    isClientMode ? currentUser.client : null
+  );
   const [workoutType, setWorkoutType] = useState<WorkoutType>('strength');
   const [category, setCategory] = useState<string>('');
   const [session, setSession] = useState<WorkoutSession | null>(null);
@@ -68,12 +75,23 @@ export default function WorkoutFlow() {
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load clients on mount
+  // Load clients on mount (trainer mode only)
   useEffect(() => {
+    if (isClientMode) {
+      setClientsLoading(false);
+      return;
+    }
     clientsApi.list(true)
       .then(setClients)
       .catch(() => {})
       .finally(() => setClientsLoading(false));
+  }, [isClientMode]);
+
+  // For client mode: check active session on mount
+  useEffect(() => {
+    if (!isClientMode || !currentUser.client) return;
+    handleSelectClient(currentUser.client);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load exercises when entering RECORD_SETS

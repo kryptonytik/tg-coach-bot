@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { clientsApi } from '../api/client';
+import { meApi } from '../api/client';
 import Layout from '../components/Layout';
-import type { Goal } from '../types';
+import type { CurrentUser, Goal } from '../types';
 
 const TOTAL_STEPS = 4;
 
@@ -18,7 +17,6 @@ interface FormData {
   first_name: string;
   last_name: string;
   phone: string;
-  telegram_username: string;
   goal: Goal;
   // Step 2
   had_training_before: boolean | null;
@@ -39,29 +37,6 @@ interface FormData {
   height: string;
   weight: string;
 }
-
-const initialForm: FormData = {
-  first_name: '',
-  last_name: '',
-  phone: '',
-  telegram_username: '',
-  goal: 'maintenance',
-  had_training_before: null,
-  previous_sports: '',
-  time_since_last_workout: '',
-  fitness_level: 5,
-  joint_pain: '',
-  pressure_issues: '',
-  surgeries: '',
-  congenital_conditions: '',
-  gi_issues: '',
-  spine_conditions: '',
-  chest_pain: '',
-  supplements: '',
-  age: '',
-  height: '',
-  weight: '',
-};
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -93,10 +68,35 @@ function FieldGroup({ label, hint, children }: { label: string; hint?: string; c
   );
 }
 
-export default function AddClient() {
-  const navigate = useNavigate();
+interface Props {
+  currentUser: CurrentUser;
+  onRegistered: () => void;
+}
+
+export default function ClientRegistration({ currentUser, onRegistered }: Props) {
+  const [showWelcome, setShowWelcome] = useState(true);
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormData>(initialForm);
+  const [form, setForm] = useState<FormData>({
+    first_name: currentUser.first_name || '',
+    last_name: currentUser.last_name || '',
+    phone: '',
+    goal: 'maintenance',
+    had_training_before: null,
+    previous_sports: '',
+    time_since_last_workout: '',
+    fitness_level: 5,
+    joint_pain: '',
+    pressure_issues: '',
+    surgeries: '',
+    congenital_conditions: '',
+    gi_issues: '',
+    spine_conditions: '',
+    chest_pain: '',
+    supplements: '',
+    age: '',
+    height: '',
+    weight: '',
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -126,12 +126,10 @@ export default function AddClient() {
     setSubmitting(true);
     setError(null);
     try {
-      const rawUsername = form.telegram_username.trim();
       const payload = {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim() || null,
         phone: form.phone.trim() || null,
-        telegram_username: rawUsername ? rawUsername.replace(/^@/, '') : null,
         goal: form.goal,
         questionnaire: {
           had_training_before: form.had_training_before,
@@ -151,8 +149,8 @@ export default function AddClient() {
           weight: form.weight ? parseFloat(form.weight) : null,
         },
       };
-      await clientsApi.create(payload);
-      navigate('/clients');
+      await meApi.register(payload);
+      onRegistered();
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Ошибка сохранения');
     } finally {
@@ -167,8 +165,51 @@ export default function AddClient() {
     'Параметры',
   ];
 
+  // Welcome screen
+  if (showWelcome) {
+    return (
+      <Layout>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
+            gap: 20,
+            padding: '40px 16px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 72 }}>👋</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: '#000' }}>Добро пожаловать!</div>
+          <div style={{ fontSize: 15, color: '#666', lineHeight: 1.5, maxWidth: 300 }}>
+            Заполните анкету чтобы тренер мог подготовить программу специально для вас
+          </div>
+          <button
+            onClick={() => setShowWelcome(false)}
+            style={{
+              marginTop: 8,
+              padding: '16px 48px',
+              background: '#1e8e3e',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 14,
+              fontSize: 17,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(30,142,62,0.3)',
+            }}
+          >
+            Начать
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Layout title={`Новый подопечный — ${stepTitles[step - 1]}`}>
+    <Layout title={`Анкета — ${stepTitles[step - 1]}`}>
       {/* Progress dots */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
         {Array.from({ length: TOTAL_STEPS }, (_, i) => (
@@ -178,7 +219,7 @@ export default function AddClient() {
               width: i + 1 === step ? 24 : 8,
               height: 8,
               borderRadius: 4,
-              background: i + 1 <= step ? '#2481cc' : '#d0d0d0',
+              background: i + 1 <= step ? '#1e8e3e' : '#d0d0d0',
               transition: 'all 0.2s',
             }}
           />
@@ -232,15 +273,6 @@ export default function AddClient() {
                 placeholder="+7 900 000 0000"
               />
             </FieldGroup>
-            <FieldGroup label="Telegram username" hint="@username без @">
-              <input
-                style={inputStyle}
-                type="text"
-                value={form.telegram_username}
-                onChange={e => set('telegram_username', e.target.value)}
-                placeholder="username"
-              />
-            </FieldGroup>
             <FieldGroup label="Цель *">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {GOAL_OPTIONS.map(opt => (
@@ -249,10 +281,10 @@ export default function AddClient() {
                     onClick={() => set('goal', opt.value)}
                     style={{
                       padding: '10px 8px',
-                      border: `2px solid ${form.goal === opt.value ? '#2481cc' : '#e0e0e0'}`,
+                      border: `2px solid ${form.goal === opt.value ? '#1e8e3e' : '#e0e0e0'}`,
                       borderRadius: 10,
-                      background: form.goal === opt.value ? '#e8f0fe' : '#fff',
-                      color: form.goal === opt.value ? '#2481cc' : '#555',
+                      background: form.goal === opt.value ? '#e6f4ea' : '#fff',
+                      color: form.goal === opt.value ? '#1e8e3e' : '#555',
                       fontSize: 13,
                       fontWeight: form.goal === opt.value ? 700 : 400,
                       cursor: 'pointer',
@@ -279,10 +311,10 @@ export default function AddClient() {
                     style={{
                       flex: 1,
                       padding: '10px',
-                      border: `2px solid ${form.had_training_before === v ? '#2481cc' : '#e0e0e0'}`,
+                      border: `2px solid ${form.had_training_before === v ? '#1e8e3e' : '#e0e0e0'}`,
                       borderRadius: 10,
-                      background: form.had_training_before === v ? '#e8f0fe' : '#fff',
-                      color: form.had_training_before === v ? '#2481cc' : '#555',
+                      background: form.had_training_before === v ? '#e6f4ea' : '#fff',
+                      color: form.had_training_before === v ? '#1e8e3e' : '#555',
                       fontSize: 15,
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -320,7 +352,7 @@ export default function AddClient() {
                 max={10}
                 value={form.fitness_level}
                 onChange={e => set('fitness_level', Number(e.target.value))}
-                style={{ width: '100%', accentColor: '#2481cc' }}
+                style={{ width: '100%', accentColor: '#1e8e3e' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999' }}>
                 <span>Начинающий</span>
@@ -474,7 +506,7 @@ export default function AddClient() {
             padding: '14px',
             border: 'none',
             borderRadius: 12,
-            background: submitting ? '#aaa' : '#2481cc',
+            background: submitting ? '#aaa' : '#1e8e3e',
             color: '#fff',
             fontSize: 16,
             fontWeight: 600,
@@ -482,7 +514,7 @@ export default function AddClient() {
             minHeight: 50,
           }}
         >
-          {submitting ? 'Сохранение...' : step === TOTAL_STEPS ? 'Сохранить' : 'Далее'}
+          {submitting ? 'Сохранение...' : step === TOTAL_STEPS ? 'Готово' : 'Далее'}
         </button>
       </div>
     </Layout>

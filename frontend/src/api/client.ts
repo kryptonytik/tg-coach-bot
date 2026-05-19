@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Client, Exercise, TrainerStats, WorkoutSession, WorkoutSet } from '../types';
+import type { BodyMeasurement, Client, ClientStats, CurrentUser, Exercise, TrainerStats, WorkoutSession, WorkoutSet } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -14,6 +14,14 @@ if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData)
   api.defaults.headers.common['Authorization'] =
     `Bearer ${(window as any).Telegram.WebApp.initData}`;
 }
+
+export const meApi = {
+  getMe: () => api.get<CurrentUser>('/api/me').then(r => r.data),
+  register: (data: any) => api.post<Client>('/api/me/register', data).then(r => r.data),
+  getStats: () => api.get<ClientStats>('/api/me/stats').then(r => r.data),
+  addMeasurement: (data: any) => api.post<BodyMeasurement>('/api/me/measurements', data).then(r => r.data),
+  getMeasurements: () => api.get<BodyMeasurement[]>('/api/me/measurements').then(r => r.data),
+};
 
 export const trainerApi = {
   getStats: () => api.get<TrainerStats>('/api/trainer/stats').then(r => r.data),
