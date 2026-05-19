@@ -12,13 +12,16 @@ from app.models.workout_set import WorkoutSet
 workouts_bp = Blueprint("workouts", __name__, url_prefix="/api/workouts")
 
 VALID_WORKOUT_TYPES = ("strength", "functional")
-VALID_CATEGORIES = (
+VALID_CATEGORIES = {
     "chest_biceps",
     "back_triceps",
     "legs_shoulders",
+    "full_body",
     "functional",
+    "cardio",
+    "hiit",
     "other",
-)
+}
 
 
 # ── Ownership helpers ─────────────────────────────────────────────────────────
