@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { meApi } from '../api/client';
 import Layout from '../components/Layout';
-import type { BodyMeasurement } from '../types';
+import type { BodyMeasurement, CurrentUser } from '../types';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -88,11 +88,16 @@ function MeasurementChip({ label, value }: MeasurementChipProps) {
   );
 }
 
-export default function MeasurementsPage() {
+interface MeasurementsPageProps {
+  currentUser?: CurrentUser;
+}
+
+export default function MeasurementsPage({ currentUser }: MeasurementsPageProps = {}) {
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<MeasurementForm>(emptyForm());
+  const [weightPreFilled, setWeightPreFilled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +112,12 @@ export default function MeasurementsPage() {
           setFormOpen(false);
         } else {
           setFormOpen(true);
+          // Pre-fill weight from questionnaire if no measurements yet
+          const qWeight = currentUser?.client?.questionnaire?.weight;
+          if (qWeight != null) {
+            setForm(f => ({ ...f, weight: String(qWeight) }));
+            setWeightPreFilled(true);
+          }
         }
       })
       .catch(() => {})
@@ -115,6 +126,7 @@ export default function MeasurementsPage() {
 
   useEffect(() => {
     fetchMeasurements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const set = (key: keyof MeasurementForm, value: string) =>
@@ -228,9 +240,12 @@ export default function MeasurementsPage() {
                     type="number"
                     inputMode="decimal"
                     value={form.weight}
-                    onChange={e => set('weight', e.target.value)}
+                    onChange={e => { set('weight', e.target.value); setWeightPreFilled(false); }}
                     placeholder="88.5"
                   />
+                  {weightPreFilled && (
+                    <span style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>Из анкеты</span>
+                  )}
                 </FieldGroup>
                 <FieldGroup label="Грудь (см)">
                   <input

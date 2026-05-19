@@ -27,7 +27,9 @@ export interface Client {
   first_name: string;
   last_name: string | null;
   phone: string | null;
+  telegram_username: string | null;
   goal: Goal;
+  target_weight: number | null;
   is_active: boolean;
   created_at: string;
   questionnaire: Questionnaire | null;
@@ -97,4 +99,7 @@ export interface ClientStats {
   sessions_this_week: number;
   goal: Goal | null;
   last_measurement: { weight: number; date: string } | null;
+  target_weight: number | null;
+  current_weight: number | null;
+  weight_to_go: number | null;
 }

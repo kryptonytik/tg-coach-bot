@@ -21,6 +21,8 @@ export const meApi = {
   getStats: () => api.get<ClientStats>('/api/me/stats').then(r => r.data),
   addMeasurement: (data: any) => api.post<BodyMeasurement>('/api/me/measurements', data).then(r => r.data),
   getMeasurements: () => api.get<BodyMeasurement[]>('/api/me/measurements').then(r => r.data),
+  getWorkoutHistory: (params?: {limit?: number; offset?: number}) =>
+    api.get<any[]>('/api/me/workout-history', { params }).then(r => r.data),
 };
 
 export const trainerApi = {

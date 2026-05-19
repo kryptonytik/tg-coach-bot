@@ -24,6 +24,9 @@ with app.app_context():
             conn.execute(db.text(
                 "ALTER TABLE clients ADD COLUMN IF NOT EXISTS telegram_username VARCHAR(128)"
             ))
+            conn.execute(db.text(
+                "ALTER TABLE clients ADD COLUMN IF NOT EXISTS target_weight FLOAT"
+            ))
             conn.commit()
 
         print("DB ready.")

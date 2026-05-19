@@ -213,6 +213,16 @@ export default function ClientProfile() {
               📞 {client.phone}
             </a>
           )}
+          {client.telegram_username && (
+            <a
+              href={`https://t.me/${client.telegram_username}`}
+              style={{ color: '#2481cc', textDecoration: 'none', display: 'block', fontSize: 14, marginBottom: 6 }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @{client.telegram_username} →
+            </a>
+          )}
           <div style={{ fontSize: 12, color: '#aaa' }}>Добавлен {createdDate}</div>
           {!client.is_active && (
             <div style={{ marginTop: 8, padding: '6px 10px', background: '#f5f5f5', borderRadius: 8, fontSize: 12, color: '#888' }}>

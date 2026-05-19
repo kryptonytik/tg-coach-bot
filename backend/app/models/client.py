@@ -15,6 +15,7 @@ class Client(db.Model):
     phone = db.Column(db.String(32), nullable=True)
     telegram_username = db.Column(db.String(128), nullable=True, index=True)
     goal = db.Column(db.String(32), nullable=False, default="maintenance")
+    target_weight = db.Column(db.Float, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -57,6 +58,7 @@ class Client(db.Model):
             "phone": self.phone,
             "telegram_username": self.telegram_username,
             "goal": self.goal,
+            "target_weight": self.target_weight,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

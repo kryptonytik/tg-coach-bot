@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from flask import Blueprint, jsonify, g
 from sqlalchemy import func
 
-from app.auth import trainer_required
+from app.auth import trainer_required, auth_required
 from app.extensions import db
 from app.models.client import Client
 from app.models.workout import WorkoutSession
@@ -51,24 +51,35 @@ def get_stats():
 
 
 @trainer_bp.get("/active-session/<int:client_id>")
-@trainer_required
+@auth_required
 def get_active_session(client_id: int):
     """
     GET /api/trainer/active-session/<client_id>
     Check if there is an incomplete session today for the given client.
     Returns session data or null.
+    Clients may only query their own client_id.
     """
-    trainer = g.current_user
+    user = g.current_user
     today = date.today()
 
-    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
-    if client is None:
-        return jsonify({"error": "Client not found"}), 404
+    if user.role == "trainer":
+        client = Client.query.filter_by(id=client_id, trainer_id=user.id).first()
+        if client is None:
+            return jsonify({"error": "Client not found"}), 404
+        trainer_id_filter = user.id
+    else:
+        # Clients can only check their own active session
+        from app.models.client import Client as _Client
+        own_client = _Client.query.filter_by(user_id=user.id).first()
+        if own_client is None or own_client.id != client_id:
+            return jsonify({"error": "Forbidden"}), 403
+        client = own_client
+        trainer_id_filter = client.trainer_id
 
     session = (
         WorkoutSession.query.filter_by(
             client_id=client_id,
-            trainer_id=trainer.id,
+            trainer_id=trainer_id_filter,
             is_completed=False,
         )
         .filter(WorkoutSession.date == today)

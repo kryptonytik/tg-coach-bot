@@ -71,6 +71,13 @@ def create_client():
             {"error": f"goal must be one of: {', '.join(VALID_GOALS)}"}
         ), 400
 
+    target_weight = data.get("target_weight")
+    if target_weight is not None:
+        try:
+            target_weight = float(target_weight)
+        except (ValueError, TypeError):
+            return jsonify({"error": "target_weight must be a number"}), 400
+
     client = Client(
         trainer_id=trainer.id,
         user_id=data.get("user_id"),
@@ -79,6 +86,7 @@ def create_client():
         phone=(data.get("phone") or "").strip() or None,
         telegram_username=(data.get("telegram_username") or "").strip() or None,
         goal=goal,
+        target_weight=target_weight,
     )
     db.session.add(client)
     db.session.flush()  # get client.id before commit

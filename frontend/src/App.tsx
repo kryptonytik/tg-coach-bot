@@ -9,6 +9,8 @@ import WorkoutFlow from './pages/WorkoutFlow';
 import ClientDashboard from './pages/ClientDashboard';
 import ClientRegistration from './pages/ClientRegistration';
 import MeasurementsPage from './pages/MeasurementsPage';
+import WorkoutHistoryPage from './pages/WorkoutHistoryPage';
+import EditProfilePage from './pages/EditProfilePage';
 import type { CurrentUser } from './types';
 import './index.css';
 
@@ -118,7 +120,9 @@ export default function App() {
           path="/register"
           element={<ClientRegistration currentUser={currentUser} onRegistered={fetchMe} />}
         />
-        <Route path="/measurements" element={<MeasurementsPage />} />
+        <Route path="/measurements" element={<MeasurementsPage currentUser={currentUser} />} />
+        <Route path="/workout-history" element={<WorkoutHistoryPage />} />
+        <Route path="/edit-profile" element={<EditProfilePage currentUser={currentUser} onSaved={fetchMe} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

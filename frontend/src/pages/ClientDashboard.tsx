@@ -97,12 +97,22 @@ export default function ClientDashboard({ currentUser }: Props) {
                 icon="🎯"
                 color="#e37400"
               />
-              <StatCard
-                label="Последний вес"
-                value={lastWeight}
-                icon="⚖️"
-                color="#9334e9"
-              />
+              {stats?.weight_to_go !== null && stats?.weight_to_go !== undefined ? (
+                <StatCard
+                  label="До цели"
+                  value={`${Math.abs(stats.weight_to_go).toFixed(1)} кг`}
+                  icon="⚖️"
+                  color="#9334e9"
+                  subtitle={stats.current_weight != null ? `${stats.current_weight} кг сейчас` : undefined}
+                />
+              ) : (
+                <StatCard
+                  label="Последний вес"
+                  value={lastWeight}
+                  icon="⚖️"
+                  color="#9334e9"
+                />
+              )}
             </div>
           )}
         </div>
@@ -157,6 +167,52 @@ export default function ClientDashboard({ currentUser }: Props) {
             >
               <span style={{ fontSize: 24 }}>📏</span>
               <span>Вес и замеры</span>
+              <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/workout-history')}
+              style={{
+                background: '#fff',
+                color: '#555',
+                border: '2px solid #e0e0e0',
+                borderRadius: 14,
+                padding: '16px 20px',
+                fontSize: 17,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 60,
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 24 }}>📋</span>
+              <span>История тренировок</span>
+              <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/edit-profile')}
+              style={{
+                background: '#fff',
+                color: '#555',
+                border: '2px solid #e0e0e0',
+                borderRadius: 14,
+                padding: '16px 20px',
+                fontSize: 17,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 60,
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 24 }}>👤</span>
+              <span>Мой профиль</span>
               <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
             </button>
           </div>

@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
 
-from app.auth import trainer_required
+from app.auth import auth_required
 from app.extensions import db
 from app.models.client import Client
 from app.models.exercise import Exercise
@@ -21,22 +21,49 @@ VALID_CATEGORIES = (
 )
 
 
+# ── Ownership helpers ─────────────────────────────────────────────────────────
+
+
+def _get_client_id_for_user(user):
+    """For clients: returns their client.id. For trainers: returns None (access all)."""
+    if user.role == "trainer":
+        return None
+    from app.models.client import Client
+    client = Client.query.filter_by(user_id=user.id, is_active=True).first()
+    return client.id if client else None
+
+
+def _check_session_access(session, user):
+    """Returns True if user can access this session."""
+    if user.role == "trainer":
+        return True
+    from app.models.client import Client
+    client = Client.query.filter_by(user_id=user.id).first()
+    return client is not None and session.client_id == client.id
+
+
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
 
 @workouts_bp.get("/sessions")
-@trainer_required
+@auth_required
 def list_sessions():
     """
     GET /api/workouts/sessions?client_id=&date=YYYY-MM-DD&limit=20
-    Returns workout sessions for the trainer.
+    Trainers see all their sessions; clients see only their own.
     """
-    trainer = g.current_user
-    query = WorkoutSession.query.filter_by(trainer_id=trainer.id)
+    user = g.current_user
 
-    client_id = request.args.get("client_id", type=int)
-    if client_id:
-        query = query.filter_by(client_id=client_id)
+    if user.role == "trainer":
+        query = WorkoutSession.query.filter_by(trainer_id=user.id)
+        client_id = request.args.get("client_id", type=int)
+        if client_id:
+            query = query.filter_by(client_id=client_id)
+    else:
+        own_client_id = _get_client_id_for_user(user)
+        if own_client_id is None:
+            return jsonify({"error": "No client profile found"}), 404
+        query = WorkoutSession.query.filter_by(client_id=own_client_id)
 
     date_param = request.args.get("date")
     if date_param:
@@ -52,25 +79,34 @@ def list_sessions():
 
 
 @workouts_bp.post("/sessions")
-@trainer_required
+@auth_required
 def create_session():
     """
     POST /api/workouts/sessions
     Body: {client_id, workout_type, category?, date?, notes?}
+    Clients: client_id from body is ignored; their own client profile is used.
     Creates a new session or returns existing incomplete session for today.
     """
-    trainer = g.current_user
+    user = g.current_user
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Request body must be JSON"}), 400
 
-    client_id = data.get("client_id")
-    if not client_id:
-        return jsonify({"error": "client_id is required"}), 400
-
-    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
-    if client is None:
-        return jsonify({"error": "Client not found"}), 404
+    if user.role == "trainer":
+        client_id = data.get("client_id")
+        if not client_id:
+            return jsonify({"error": "client_id is required"}), 400
+        client = Client.query.filter_by(id=client_id, trainer_id=user.id).first()
+        if client is None:
+            return jsonify({"error": "Client not found"}), 404
+        trainer_id = user.id
+    else:
+        own_client_id = _get_client_id_for_user(user)
+        if own_client_id is None:
+            return jsonify({"error": "No client profile found"}), 404
+        client_id = own_client_id
+        client = Client.query.get(client_id)
+        trainer_id = client.trainer_id
 
     workout_type = data.get("workout_type")
     if workout_type not in VALID_WORKOUT_TYPES:
@@ -96,7 +132,7 @@ def create_session():
     existing = (
         WorkoutSession.query.filter_by(
             client_id=client_id,
-            trainer_id=trainer.id,
+            trainer_id=trainer_id,
             is_completed=False,
         )
         .filter(WorkoutSession.date == session_date)
@@ -107,7 +143,7 @@ def create_session():
 
     session = WorkoutSession(
         client_id=client_id,
-        trainer_id=trainer.id,
+        trainer_id=trainer_id,
         date=session_date,
         workout_type=workout_type,
         category=category,
@@ -119,35 +155,53 @@ def create_session():
 
 
 @workouts_bp.get("/sessions/<int:session_id>")
-@trainer_required
+@auth_required
 def get_session(session_id: int):
     """
     GET /api/workouts/sessions/<id>
     Returns full session with all sets and exercise details.
+    Clients may only access their own sessions.
     """
-    trainer = g.current_user
-    session = WorkoutSession.query.filter_by(
-        id=session_id, trainer_id=trainer.id
-    ).first()
-    if session is None:
-        return jsonify({"error": "Session not found"}), 404
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
 
     return jsonify(session.to_dict(include_sets=True))
 
 
 @workouts_bp.patch("/sessions/<int:session_id>")
-@trainer_required
+@auth_required
 def update_session(session_id: int):
     """
     PATCH /api/workouts/sessions/<id>
     Updatable: notes, is_completed, category, workout_type.
+    Clients may only update their own sessions.
     """
-    trainer = g.current_user
-    session = WorkoutSession.query.filter_by(
-        id=session_id, trainer_id=trainer.id
-    ).first()
-    if session is None:
-        return jsonify({"error": "Session not found"}), 404
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json(silent=True)
     if not data:
@@ -180,19 +234,28 @@ def update_session(session_id: int):
 
 
 @workouts_bp.post("/sessions/<int:session_id>/sets")
-@trainer_required
+@auth_required
 def add_set(session_id: int):
     """
     POST /api/workouts/sessions/<id>/sets
     Body: {exercise_id, set_number, weight?, reps?, notes?}
     Adds a set to the session.
+    Clients may only add sets to their own sessions.
     """
-    trainer = g.current_user
-    session = WorkoutSession.query.filter_by(
-        id=session_id, trainer_id=trainer.id
-    ).first()
-    if session is None:
-        return jsonify({"error": "Session not found"}), 404
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json(silent=True)
     if not data:
@@ -244,18 +307,27 @@ def add_set(session_id: int):
 
 
 @workouts_bp.delete("/sessions/<int:session_id>/sets/<int:set_id>")
-@trainer_required
+@auth_required
 def delete_set(session_id: int, set_id: int):
     """
     DELETE /api/workouts/sessions/<id>/sets/<set_id>
     Removes a set from the session.
+    Clients may only delete sets from their own sessions.
     """
-    trainer = g.current_user
-    session = WorkoutSession.query.filter_by(
-        id=session_id, trainer_id=trainer.id
-    ).first()
-    if session is None:
-        return jsonify({"error": "Session not found"}), 404
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(
+            id=session_id, trainer_id=user.id
+        ).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
 
     workout_set = WorkoutSet.query.filter_by(id=set_id, session_id=session_id).first()
     if workout_set is None:
@@ -270,29 +342,36 @@ def delete_set(session_id: int, set_id: int):
 
 
 @workouts_bp.get("/exercise-history")
-@trainer_required
+@auth_required
 def exercise_history():
     """
     GET /api/workouts/exercise-history?client_id=&exercise_id=&limit=5
     Returns last N sessions where this exercise was logged for the client.
     Powers the "previous workout data" UI while logging sets.
+    Clients: client_id param is ignored; their own client profile is used.
 
     Response: [{date, session_id, sets: [{weight, reps, set_number}]}]
     """
-    trainer = g.current_user
+    user = g.current_user
 
-    client_id = request.args.get("client_id", type=int)
     exercise_id = request.args.get("exercise_id", type=int)
     limit = min(request.args.get("limit", 5, type=int), 20)
 
-    if not client_id:
-        return jsonify({"error": "client_id is required"}), 400
     if not exercise_id:
         return jsonify({"error": "exercise_id is required"}), 400
 
-    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
-    if client is None:
-        return jsonify({"error": "Client not found"}), 404
+    if user.role == "trainer":
+        client_id = request.args.get("client_id", type=int)
+        if not client_id:
+            return jsonify({"error": "client_id is required"}), 400
+        client = Client.query.filter_by(id=client_id, trainer_id=user.id).first()
+        if client is None:
+            return jsonify({"error": "Client not found"}), 404
+    else:
+        own_client_id = _get_client_id_for_user(user)
+        if own_client_id is None:
+            return jsonify({"error": "No client profile found"}), 404
+        client_id = own_client_id
 
     exercise = Exercise.query.get(exercise_id)
     if exercise is None:

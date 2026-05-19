@@ -18,6 +18,7 @@ interface FormData {
   last_name: string;
   phone: string;
   goal: Goal;
+  target_weight: string;
   // Step 2
   had_training_before: boolean | null;
   previous_sports: string;
@@ -81,6 +82,7 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
     last_name: currentUser.last_name || '',
     phone: '',
     goal: 'maintenance',
+    target_weight: '',
     had_training_before: null,
     previous_sports: '',
     time_since_last_workout: '',
@@ -131,6 +133,7 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
         last_name: form.last_name.trim() || null,
         phone: form.phone.trim() || null,
         goal: form.goal,
+        target_weight: form.target_weight ? parseFloat(form.target_weight) : null,
         questionnaire: {
           had_training_before: form.had_training_before,
           previous_sports: form.previous_sports || null,
@@ -295,6 +298,16 @@ export default function ClientRegistration({ currentUser, onRegistered }: Props)
                   </button>
                 ))}
               </div>
+            </FieldGroup>
+            <FieldGroup label="Целевой вес (кг)">
+              <input
+                style={inputStyle}
+                type="number"
+                inputMode="decimal"
+                value={form.target_weight}
+                onChange={e => set('target_weight', e.target.value)}
+                placeholder="70"
+              />
             </FieldGroup>
           </>
         )}

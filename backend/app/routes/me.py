@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
+from sqlalchemy import func
 
 from app.auth import auth_required
 from app.extensions import db
@@ -8,6 +9,7 @@ from app.models.client import Client, VALID_GOALS
 from app.models.questionnaire import Questionnaire
 from app.models.body_measurement import BodyMeasurement
 from app.models.workout import WorkoutSession
+from app.models.workout_set import WorkoutSet
 from app.models.user import User
 
 me_bp = Blueprint("me", __name__, url_prefix="/api/me")
@@ -84,6 +86,13 @@ def register_as_client():
     if trainer is None:
         return jsonify({"error": "No trainer available in the system"}), 503
 
+    target_weight = data.get("target_weight")
+    if target_weight is not None:
+        try:
+            target_weight = float(target_weight)
+        except (ValueError, TypeError):
+            return jsonify({"error": "target_weight must be a number"}), 400
+
     client = Client(
         trainer_id=trainer.id,
         user_id=user.id,
@@ -92,6 +101,7 @@ def register_as_client():
         phone=(data.get("phone") or "").strip() or None,
         telegram_username=data.get("telegram_username") or user.telegram_username,
         goal=goal,
+        target_weight=target_weight,
     )
     db.session.add(client)
     db.session.flush()
@@ -159,11 +169,26 @@ def get_my_stats():
             "date": last_measurement.date.isoformat() if last_measurement.date else None,
         }
 
+    # current_weight: prefer last body measurement, fall back to questionnaire weight
+    current_weight = None
+    if last_measurement is not None:
+        current_weight = last_measurement.weight
+    elif client.questionnaire is not None:
+        current_weight = client.questionnaire.weight
+
+    target_weight = client.target_weight
+    weight_to_go = None
+    if target_weight is not None and current_weight is not None:
+        weight_to_go = round(abs(current_weight - target_weight), 2)
+
     return jsonify({
         "sessions_this_month": sessions_this_month,
         "sessions_this_week": sessions_this_week,
         "goal": client.goal,
         "last_measurement": last_measurement_data,
+        "target_weight": target_weight,
+        "current_weight": current_weight,
+        "weight_to_go": weight_to_go,
     })
 
 
@@ -228,3 +253,48 @@ def list_measurements():
         .all()
     )
     return jsonify([m.to_dict() for m in measurements])
+
+
+@me_bp.get("/workout-history")
+@auth_required
+def get_workout_history():
+    """
+    GET /api/me/workout-history?limit=20&offset=0
+    Returns client's completed workout sessions ordered by date desc.
+    Response: [{id, date, workout_type, category, sets_count, exercises_count}]
+    """
+    user = g.current_user
+    client = user.client_profile
+    if client is None:
+        return jsonify({"error": "No client profile found"}), 404
+
+    limit = min(request.args.get("limit", 20, type=int), 100)
+    offset = request.args.get("offset", 0, type=int)
+
+    sessions = (
+        WorkoutSession.query
+        .filter_by(client_id=client.id, is_completed=True)
+        .order_by(WorkoutSession.date.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+    result = []
+    for s in sessions:
+        sets_count = WorkoutSet.query.filter_by(session_id=s.id).count()
+        exercises_count = (
+            db.session.query(func.count(func.distinct(WorkoutSet.exercise_id)))
+            .filter(WorkoutSet.session_id == s.id)
+            .scalar()
+        ) or 0
+        result.append({
+            "id": s.id,
+            "date": s.date.isoformat() if s.date else None,
+            "workout_type": s.workout_type,
+            "category": s.category,
+            "sets_count": sets_count,
+            "exercises_count": exercises_count,
+        })
+
+    return jsonify(result)
