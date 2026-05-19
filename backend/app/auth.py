@@ -65,9 +65,18 @@ def validate_telegram_init_data(init_data: str, bot_token: str):
     return user_data
 
 
+def _get_trainer_ids():
+    ids = os.environ.get("TRAINER_IDS", "")
+    return [i.strip() for i in ids.split(",") if i.strip()]
+
+
 def _get_or_create_user(telegram_id: str, user_data: dict, role: str = "client"):
     """Fetch existing user or create a new one from Telegram data."""
     from app.models.user import User
+
+    trainer_ids = _get_trainer_ids()
+    if str(telegram_id) in trainer_ids:
+        role = "trainer"
 
     user = User.query.filter_by(telegram_id=str(telegram_id)).first()
     if user is None:
@@ -79,6 +88,9 @@ def _get_or_create_user(telegram_id: str, user_data: dict, role: str = "client")
             role=role,
         )
         db.session.add(user)
+        db.session.commit()
+    elif str(telegram_id) in trainer_ids and user.role != "trainer":
+        user.role = "trainer"
         db.session.commit()
     return user
 
