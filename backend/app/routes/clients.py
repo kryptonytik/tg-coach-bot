@@ -43,13 +43,35 @@ def list_clients():
     trainer = g.current_user
     query = Client.query.filter_by(trainer_id=trainer.id)
 
+    query = query.filter(
+        ~((Client.user_id == trainer.id) & (Client.trainer_id == trainer.id))
+    )
+
     active_param = request.args.get("active")
     if active_param is not None:
         is_active = active_param.lower() == "true"
         query = query.filter_by(is_active=is_active)
 
     clients = query.order_by(Client.first_name, Client.last_name).all()
-    return jsonify([c.to_dict() for c in clients])
+
+    client_ids = [c.id for c in clients]
+    last_dates = {}
+    if client_ids:
+        rows = (
+            db.session.query(WorkoutSession.client_id, func.max(WorkoutSession.date).label('last_date'))
+            .filter(WorkoutSession.client_id.in_(client_ids), WorkoutSession.is_completed == True)
+            .group_by(WorkoutSession.client_id)
+            .all()
+        )
+        last_dates = {row.client_id: row.last_date for row in rows}
+
+    result = []
+    for c in clients:
+        d = c.to_dict(include_questionnaire=False)
+        last_d = last_dates.get(c.id)
+        d['last_workout_date'] = last_d.isoformat() if last_d else None
+        result.append(d)
+    return jsonify(result)
 
 
 @clients_bp.post("")
@@ -156,6 +178,9 @@ def update_client(client_id: int):
         client.first_name = first_name
     if "last_name" in data:
         client.last_name = (data["last_name"] or "").strip() or None
+    if "notes" in data:
+        val = data.get("notes")
+        client.notes = val.strip() if isinstance(val, str) and val.strip() else None
 
     # Patch questionnaire fields if provided
     questionnaire_data = data.get("questionnaire")
@@ -238,6 +263,24 @@ def get_client_measurements(client_id: int):
         .all()
     )
     return jsonify([m.to_dict() for m in measurements])
+
+
+@clients_bp.delete("/<int:client_id>/permanent")
+@trainer_required
+def permanent_delete_client(client_id: int):
+    """
+    DELETE /api/clients/<id>/permanent
+    Hard delete: removes the client and all related data (sessions, sets, measurements, questionnaire).
+    All cascades are defined on the ORM relationships, so db.session.delete(client) suffices.
+    """
+    trainer = g.current_user
+    client = Client.query.filter_by(id=client_id, trainer_id=trainer.id).first()
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
+
+    db.session.delete(client)
+    db.session.commit()
+    return jsonify({"message": "deleted", "id": client_id})
 
 
 @clients_bp.delete("/<int:client_id>")

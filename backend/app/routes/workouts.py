@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
+from sqlalchemy import func
 
 from app.auth import auth_required
 from app.extensions import db
@@ -476,3 +477,119 @@ def exercise_history():
         )
 
     return jsonify(result)
+
+
+@workouts_bp.get("/sessions/<int:session_id>/progress")
+@auth_required
+def get_session_progress(session_id: int):
+    """
+    GET /api/workouts/sessions/<id>/progress
+    Compares this session's exercises vs the previous completed session of same category.
+    Returns: {session_id, has_comparison, total_sets, exercises: [{exercise_id, exercise_name, current_avg, prev_avg, delta, trend}]}
+    trend: "up" | "down" | "same" | "new"
+    """
+    user = g.current_user
+
+    if user.role == "trainer":
+        session = WorkoutSession.query.filter_by(id=session_id, trainer_id=user.id).first()
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+    else:
+        session = WorkoutSession.query.get(session_id)
+        if session is None:
+            return jsonify({"error": "Session not found"}), 404
+        if not _check_session_access(session, user):
+            return jsonify({"error": "Forbidden"}), 403
+
+    # All sets in current session
+    current_sets = (
+        WorkoutSet.query.filter_by(session_id=session_id)
+        .order_by(WorkoutSet.exercise_id, WorkoutSet.set_number)
+        .all()
+    )
+
+    if not current_sets:
+        return jsonify({"session_id": session_id, "has_comparison": False, "total_sets": 0, "exercises": []})
+
+    # Group weights by exercise, preserve order
+    from collections import defaultdict
+    exercise_order = []
+    seen_ids = set()
+    current_weights = defaultdict(list)
+    for ws in current_sets:
+        if ws.exercise_id not in seen_ids:
+            exercise_order.append(ws.exercise_id)
+            seen_ids.add(ws.exercise_id)
+        if ws.weight is not None:
+            current_weights[ws.exercise_id].append(ws.weight)
+
+    # Load exercise names
+    exercise_ids = list(seen_ids)
+    exercises_map = {ex.id: ex for ex in Exercise.query.filter(Exercise.id.in_(exercise_ids)).all()}
+
+    # Find previous completed session for same client + same category
+    prev_session = (
+        WorkoutSession.query
+        .filter(
+            WorkoutSession.client_id == session.client_id,
+            WorkoutSession.category == session.category,
+            WorkoutSession.is_completed == True,
+            WorkoutSession.id != session_id,
+        )
+        .order_by(WorkoutSession.date.desc())
+        .first()
+    )
+
+    prev_weights = {}
+    if prev_session:
+        prev_sets = WorkoutSet.query.filter_by(session_id=prev_session.id).all()
+        prev_groups = defaultdict(list)
+        for ws in prev_sets:
+            if ws.weight is not None:
+                prev_groups[ws.exercise_id].append(ws.weight)
+        prev_weights = {
+            eid: sum(ws) / len(ws)
+            for eid, ws in prev_groups.items() if ws
+        }
+
+    # Build result
+    result_exercises = []
+    for eid in exercise_order:
+        ex = exercises_map.get(eid)
+        cur_list = current_weights.get(eid, [])
+        cur_avg = round(sum(cur_list) / len(cur_list), 1) if cur_list else None
+        prev_avg = round(prev_weights[eid], 1) if eid in prev_weights else None
+
+        if prev_avg is None:
+            trend = "new"
+            delta = None
+        elif cur_avg is None:
+            trend = "same"
+            delta = None
+        else:
+            diff = cur_avg - prev_avg
+            if diff > 0.5:
+                trend = "up"
+                delta = round(diff, 1)
+            elif diff < -0.5:
+                trend = "down"
+                delta = round(abs(diff), 1)
+            else:
+                trend = "same"
+                delta = None
+
+        result_exercises.append({
+            "exercise_id": eid,
+            "exercise_name": ex.name if ex else None,
+            "current_avg": cur_avg,
+            "prev_avg": prev_avg,
+            "delta": delta,
+            "trend": trend,
+        })
+
+    return jsonify({
+        "session_id": session_id,
+        "has_comparison": prev_session is not None,
+        "total_sets": len(current_sets),
+        "exercises": result_exercises,
+    })

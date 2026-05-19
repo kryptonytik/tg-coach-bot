@@ -74,6 +74,7 @@ export default function WorkoutFlow({ currentUser }: Props) {
   const [sessionSets, setSessionSets] = useState<WorkoutSet[]>([]);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<any>(null);
 
   // Quick fill state
   const [quickFill, setQuickFill] = useState(false);
@@ -245,6 +246,12 @@ export default function WorkoutFlow({ currentUser }: Props) {
     setError(null);
     try {
       await workoutsApi.updateSession(session.id, { is_completed: true });
+      try {
+        const prog = await workoutsApi.getSessionProgress(session.id);
+        setProgress(prog);
+      } catch {
+        // progress is optional, don't fail the completion
+      }
       setStep('DONE');
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Ошибка завершения');
@@ -271,7 +278,9 @@ export default function WorkoutFlow({ currentUser }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 20, padding: '40px 0' }}>
           <div style={{ fontSize: 72 }}>✅</div>
           <div style={{ fontSize: 22, fontWeight: 700, textAlign: 'center' }}>
-            Тренировка записана!
+            {progress?.exercises?.some((e: any) => e.trend === 'up')
+              ? 'Отличная тренировка! 🏆'
+              : 'Тренировка записана!'}
           </div>
           <div style={{ fontSize: 15, color: '#888', textAlign: 'center' }}>
             {selectedClient?.first_name} — {WORKOUT_TYPE_LABELS[workoutType]}, {categoryLabel(category)}
@@ -279,6 +288,48 @@ export default function WorkoutFlow({ currentUser }: Props) {
           <div style={{ fontSize: 14, color: '#aaa' }}>
             Подходов: {sessionSets.length}
           </div>
+
+          {/* Progress block */}
+          {progress && progress.exercises && progress.exercises.length > 0 && (
+            <div style={{
+              background: '#fff',
+              borderRadius: 14,
+              padding: '14px 16px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              width: '100%',
+              maxWidth: 360,
+              alignSelf: 'stretch',
+            }}>
+              {progress.has_comparison && (
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 8 }}>
+                  Сравнение с прошлой тренировкой:
+                </div>
+              )}
+              {progress.exercises.map((ex: any) => {
+                let icon: string, text: string, color: string;
+                if (ex.trend === 'up') {
+                  icon = '↑'; text = `${ex.exercise_name} +${ex.delta} кг`; color = '#1e8e3e';
+                } else if (ex.trend === 'down') {
+                  icon = '↓'; text = `${ex.exercise_name} — немного снизился, бывает`; color = '#e37400';
+                } else if (ex.trend === 'new') {
+                  icon = '✨'; text = `${ex.exercise_name} — первый раз`; color = '#2481cc';
+                } else {
+                  icon = '→'; text = `${ex.exercise_name} — стабильно`; color = '#888';
+                }
+                return (
+                  <div key={ex.exercise_id} style={{ fontSize: 13, color, padding: '3px 0', lineHeight: 1.4 }}>
+                    {icon} {text}
+                  </div>
+                );
+              })}
+              {progress.exercises.some((e: any) => e.trend === 'up') && (
+                <div style={{ fontSize: 13, color: '#1e8e3e', fontWeight: 600, marginTop: 8 }}>
+                  💪 Ты молодец, продолжай в том же духе!
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             onClick={() => navigate('/')}
             style={{

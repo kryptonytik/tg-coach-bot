@@ -13,6 +13,9 @@ import WorkoutHistoryPage from './pages/WorkoutHistoryPage';
 import WorkoutDetailPage from './pages/WorkoutDetailPage';
 import TrainerWorkoutPage from './pages/TrainerWorkoutPage';
 import EditProfilePage from './pages/EditProfilePage';
+import TrainerWorkoutHistoryPage from './pages/TrainerWorkoutHistoryPage';
+import ExerciseSettingsPage from './pages/ExerciseSettingsPage';
+import TrainerProfilePage from './pages/TrainerProfilePage';
 import type { CurrentUser } from './types';
 import './index.css';
 
@@ -127,6 +130,9 @@ export default function App() {
         <Route path="/workout-detail/:id" element={<WorkoutDetailPage />} />
         <Route path="/my-workout" element={<TrainerWorkoutPage currentUser={currentUser} />} />
         <Route path="/edit-profile" element={<EditProfilePage currentUser={currentUser} onSaved={fetchMe} />} />
+        <Route path="/my-workout-history" element={<TrainerWorkoutHistoryPage />} />
+        <Route path="/settings/exercises" element={<ExerciseSettingsPage />} />
+        <Route path="/trainer-profile" element={<TrainerProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

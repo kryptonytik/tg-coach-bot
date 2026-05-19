@@ -4,7 +4,10 @@ VALID_CATEGORIES = (
     "chest_biceps",
     "back_triceps",
     "legs_shoulders",
+    "full_body",
     "functional",
+    "cardio",
+    "hiit",
     "other",
 )
 
@@ -21,6 +24,7 @@ class Exercise(db.Model):
     muscle_group = db.Column(db.String(128), nullable=True)
     description = db.Column(db.Text, nullable=True)
     is_custom = db.Column(db.Boolean, nullable=False, default=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     # Relationship back-refs from WorkoutSet
     # sets -> backref from WorkoutSet.exercise
@@ -34,6 +38,7 @@ class Exercise(db.Model):
             "muscle_group": self.muscle_group,
             "description": self.description,
             "is_custom": self.is_custom,
+            "is_active": self.is_active,
         }
 
     def __repr__(self):

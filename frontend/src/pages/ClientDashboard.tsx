@@ -16,10 +16,95 @@ interface Props {
   currentUser: CurrentUser;
 }
 
+function WeightMiniChart({ measurements }: { measurements: any[] }) {
+  const pts = [...measurements]
+    .filter(m => m.weight != null)
+    .reverse()
+    .slice(0, 6);
+  if (pts.length < 2) return (
+    <div style={{ textAlign: 'center', color: '#888', fontSize: 13, padding: '12px 0' }}>
+      Нужно минимум 2 замера для графика
+    </div>
+  );
+
+  const weights = pts.map((m: any) => m.weight as number);
+  const minW = Math.min(...weights);
+  const maxW = Math.max(...weights);
+  const range = maxW - minW || 1;
+  const W = 300, H = 60, pad = 20;
+
+  const coords = weights.map((w, i) => ({
+    x: pad + (i / (weights.length - 1)) * (W - 2 * pad),
+    y: H - pad - ((w - minW) / range) * (H - 2 * pad),
+  }));
+  const polyline = coords.map(p => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', marginTop: 8 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 6 }}>Динамика веса</div>
+      <svg viewBox={`0 0 ${W} ${H + 24}`} style={{ width: '100%', height: 80, overflow: 'visible' }}>
+        <polyline points={polyline} fill="none" stroke="#9334e9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {coords.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="4" fill="#9334e9" />
+            <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="10" fill="#555">{weights[i]}</text>
+            <text x={p.x} y={H + 18} textAnchor="middle" fontSize="9" fill="#aaa">
+              {new Date(pts[i].date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function WorkoutsBarChart({ sessions }: { sessions: any[] }) {
+  const now = new Date();
+  const weeks = [3, 2, 1, 0].map(weeksAgo => {
+    const end = new Date(now.getTime() - weeksAgo * 7 * 86400000);
+    const start = new Date(end.getTime() - 7 * 86400000);
+    const count = sessions.filter((s: any) => {
+      const d = new Date(s.date);
+      return d >= start && d < end;
+    }).length;
+    const label = weeksAgo === 0 ? 'Эта нед.' : weeksAgo === 1 ? 'Прош.' : `${weeksAgo} н. н.`;
+    return { label, count };
+  });
+
+  const max = Math.max(...weeks.map(w => w.count), 1);
+  const W = 280, H = 56, bw = 50, gap = 16, padL = 10;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', marginTop: 8 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 6 }}>Тренировки по неделям</div>
+      <svg viewBox={`0 0 ${W} ${H + 22}`} style={{ width: '100%', height: 80, overflow: 'visible' }}>
+        {weeks.map((week, i) => {
+          const barH = Math.max((week.count / max) * H, week.count > 0 ? 4 : 0);
+          const x = padL + i * (bw + gap);
+          const y = H - barH;
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={bw} height={barH || 2} rx="4"
+                fill={i === 3 ? '#2481cc' : '#93c5fd'} />
+              <text x={x + bw / 2} y={H + 16} textAnchor="middle" fontSize="9" fill="#888">{week.label}</text>
+              {week.count > 0 && (
+                <text x={x + bw / 2} y={y - 4} textAnchor="middle" fontSize="10" fill="#555">{week.count}</text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function ClientDashboard({ currentUser }: Props) {
   const navigate = useNavigate();
   const [stats, setStats] = useState<ClientStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [workoutSessions, setWorkoutSessions] = useState<any[]>([]);
+  const [activeChart, setActiveChart] = useState<'weight' | 'workouts' | null>(null);
 
   useEffect(() => {
     meApi
@@ -27,6 +112,8 @@ export default function ClientDashboard({ currentUser }: Props) {
       .then(setStats)
       .catch(() => {})
       .finally(() => setLoading(false));
+    meApi.getMeasurements().then(setMeasurements).catch(() => {});
+    meApi.getWorkoutHistory({ limit: 50 }).then(setWorkoutSessions).catch(() => {});
   }, []);
 
   const goalLabel = stats?.goal ? (GOAL_LABELS[stats.goal] ?? '—') : '—';
@@ -78,42 +165,62 @@ export default function ClientDashboard({ currentUser }: Props) {
               ))}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <StatCard
-                label="Тренировок в месяце"
-                value={stats?.sessions_this_month ?? '—'}
-                icon="📅"
-                color="#1e8e3e"
-              />
-              <StatCard
-                label="За неделю"
-                value={stats?.sessions_this_week ?? '—'}
-                icon="🏋️"
-                color="#2481cc"
-              />
-              <StatCard
-                label="Цель"
-                value={goalLabel}
-                icon="🎯"
-                color="#e37400"
-              />
-              <StatCard
-                label="Текущий вес"
-                value={stats?.current_weight != null ? `${stats.current_weight} кг` : '—'}
-                icon="⚖️"
-                color="#9334e9"
-                subtitle={
-                  stats?.weight_to_go != null && stats?.current_weight != null
-                    ? `${stats.weight_to_go > 0 ? '+' : ''}${stats.weight_to_go.toFixed(1)} кг до цели`
-                    : undefined
-                }
-                subtitleColor={
-                  stats?.goal === 'weight_loss' ? '#1e8e3e'
-                  : stats?.goal === 'weight_gain' ? '#2481cc'
-                  : '#aaa'
-                }
-              />
-            </div>
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div
+                  onClick={() => setActiveChart(prev => prev === 'workouts' ? null : 'workouts')}
+                  style={{ cursor: 'pointer', position: 'relative' }}
+                >
+                  <StatCard
+                    label="Тренировок в месяце"
+                    value={stats?.sessions_this_month ?? '—'}
+                    icon="📅"
+                    color="#1e8e3e"
+                  />
+                  <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 10, color: '#ccc' }}>
+                    {activeChart === 'workouts' ? '▴' : '▾'}
+                  </span>
+                </div>
+                <StatCard
+                  label="За неделю"
+                  value={stats?.sessions_this_week ?? '—'}
+                  icon="🏋️"
+                  color="#2481cc"
+                />
+                <StatCard
+                  label="Цель"
+                  value={goalLabel}
+                  icon="🎯"
+                  color="#e37400"
+                />
+                <div
+                  onClick={() => setActiveChart(prev => prev === 'weight' ? null : 'weight')}
+                  style={{ cursor: 'pointer', position: 'relative' }}
+                >
+                  <StatCard
+                    label="Текущий вес"
+                    value={stats?.current_weight != null ? `${stats.current_weight} кг` : '—'}
+                    icon="⚖️"
+                    color="#9334e9"
+                    subtitle={
+                      stats?.weight_to_go != null && stats?.current_weight != null
+                        ? `${stats.weight_to_go > 0 ? '+' : ''}${stats.weight_to_go.toFixed(1)} кг до цели`
+                        : undefined
+                    }
+                    subtitleColor={
+                      stats?.goal === 'weight_loss' ? '#1e8e3e'
+                      : stats?.goal === 'weight_gain' ? '#2481cc'
+                      : '#aaa'
+                    }
+                  />
+                  <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 10, color: '#ccc' }}>
+                    {activeChart === 'weight' ? '▴' : '▾'}
+                  </span>
+                </div>
+              </div>
+              {activeChart === 'weight' && <WeightMiniChart measurements={measurements} />}
+              {activeChart === 'workouts' && <WorkoutsBarChart sessions={workoutSessions} />}
+            </>
           )}
         </div>
 

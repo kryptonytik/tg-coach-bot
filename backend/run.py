@@ -28,6 +28,12 @@ def _init_db():
                 conn.execute(db.text(
                     "ALTER TABLE clients ADD COLUMN IF NOT EXISTS target_weight FLOAT"
                 ))
+                conn.execute(db.text(
+                    "ALTER TABLE clients ADD COLUMN IF NOT EXISTS notes TEXT"
+                ))
+                conn.execute(db.text(
+                    "ALTER TABLE exercises ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE"
+                ))
                 conn.commit()
 
             print("DB ready.")

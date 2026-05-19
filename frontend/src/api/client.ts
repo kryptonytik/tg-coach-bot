@@ -32,6 +32,8 @@ export const trainerApi = {
   getActiveSession: (clientId: number) =>
     api.get<{ session: WorkoutSession | null }>(`/api/trainer/active-session/${clientId}`).then(r => r.data),
   getMyClientProfile: () => api.get('/api/trainer/my-client-profile').then(r => r.data),
+  getMyWorkoutHistory: (params?: { limit?: number; offset?: number }) =>
+    api.get<any[]>('/api/trainer/my-workout-history', { params }).then(r => r.data),
 };
 
 export const clientsApi = {
@@ -43,6 +45,7 @@ export const clientsApi = {
   create: (data: any) => api.post<Client>('/api/clients', data).then(r => r.data),
   update: (id: number, data: any) => api.patch<Client>(`/api/clients/${id}`, data).then(r => r.data),
   deactivate: (id: number) => api.delete(`/api/clients/${id}`).then(r => r.data),
+  deletePermanent: (id: number) => api.delete(`/api/clients/${id}/permanent`).then(r => r.data),
   getWorkoutHistory: (id: number) => api.get<any[]>(`/api/clients/${id}/workout-history`).then(r => r.data),
   getMeasurements: (id: number) => api.get<any[]>(`/api/clients/${id}/measurements`).then(r => r.data),
 };
@@ -56,9 +59,14 @@ export const workoutsApi = {
   deleteSet: (sessionId: number, setId: number) => api.delete(`/api/workouts/sessions/${sessionId}/sets/${setId}`),
   getExerciseHistory: (clientId: number, exerciseId: number) =>
     api.get<any[]>('/api/workouts/exercise-history', { params: { client_id: clientId, exercise_id: exerciseId, limit: 3 } }).then(r => r.data),
+  getSessionProgress: (id: number) => api.get<any>(`/api/workouts/sessions/${id}/progress`).then(r => r.data),
 };
 
 export const exercisesApi = {
   list: (params?: { category?: string; type?: string }) =>
     api.get<Exercise[]>('/api/exercises', { params }).then(r => r.data),
+  create: (data: { name: string; workout_type: string; category: string; muscle_group?: string }) =>
+    api.post('/api/exercises', data).then(r => r.data),
+  update: (id: number, data: any) => api.patch(`/api/exercises/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/api/exercises/${id}`).then(r => r.data),
 };

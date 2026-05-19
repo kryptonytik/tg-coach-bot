@@ -17,6 +17,7 @@ class Client(db.Model):
     goal = db.Column(db.String(32), nullable=False, default="maintenance")
     target_weight = db.Column(db.Float, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
@@ -60,6 +61,7 @@ class Client(db.Model):
             "goal": self.goal,
             "target_weight": self.target_weight,
             "is_active": self.is_active,
+            "notes": self.notes,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
         if include_questionnaire:

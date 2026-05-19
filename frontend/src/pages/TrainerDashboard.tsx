@@ -84,6 +84,8 @@ export default function TrainerDashboard() {
         <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600, color: '#555' }}>
           Действия
         </h2>
+
+        {/* Section: Подопечные */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             onClick={() => navigate('/workout')}
@@ -92,7 +94,7 @@ export default function TrainerDashboard() {
               color: '#fff',
               border: 'none',
               borderRadius: 14,
-              padding: '18px 20px',
+              padding: '16px 20px',
               fontSize: 17,
               fontWeight: 600,
               cursor: 'pointer',
@@ -101,12 +103,13 @@ export default function TrainerDashboard() {
               gap: 12,
               minHeight: 60,
               textAlign: 'left',
+              width: '100%',
               boxShadow: '0 2px 8px rgba(36,129,204,0.3)',
             }}
           >
             <span style={{ fontSize: 24 }}>🏋️</span>
             <span>Записать тренировку</span>
-            <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.7 }}>›</span>
+            <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
           </button>
 
           <button
@@ -125,6 +128,7 @@ export default function TrainerDashboard() {
               gap: 12,
               minHeight: 60,
               textAlign: 'left',
+              width: '100%',
             }}
           >
             <span style={{ fontSize: 24 }}>👥</span>
@@ -148,20 +152,31 @@ export default function TrainerDashboard() {
               gap: 12,
               minHeight: 60,
               textAlign: 'left',
+              width: '100%',
             }}
           >
             <span style={{ fontSize: 24 }}>➕</span>
             <span>Добавить подопечного</span>
             <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
           </button>
+        </div>
 
-          <div style={{ marginTop: 8, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+        {/* Divider with label "Я" */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0 12px' }}>
+          <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', letterSpacing: 1 }}>Я</div>
+          <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+        </div>
+
+        {/* Section: Я */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button
               onClick={() => navigate('/my-workout')}
               style={{
-                background: '#fff',
-                color: '#9334e9',
-                border: '2px solid #9334e9',
+                background: '#9334e9',
+                color: '#fff',
+                border: 'none',
                 borderRadius: 14,
                 padding: '16px 20px',
                 fontSize: 17,
@@ -171,15 +186,84 @@ export default function TrainerDashboard() {
                 alignItems: 'center',
                 gap: 12,
                 minHeight: 60,
-                textAlign: 'left',
-                width: '100%',
               }}
             >
-              <span style={{ fontSize: 24 }}>💪</span>
-              <span>Моя тренировка</span>
-              <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+              <span style={{ fontSize: 22 }}>💪</span>
+              <span style={{ flex: 1 }}>Моя тренировка</span>
+              <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/my-workout-history')}
+              style={{
+                background: '#7b1fa2',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 14,
+                padding: '16px 20px',
+                fontSize: 17,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 60,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>📋</span>
+              <span style={{ flex: 1 }}>Моя история</span>
+              <span style={{ fontSize: 18, opacity: 0.5 }}>›</span>
             </button>
           </div>
+
+          <button
+            onClick={() => navigate('/trainer-profile')}
+            style={{
+              background: '#fff',
+              color: '#9334e9',
+              border: '2px solid #9334e9',
+              borderRadius: 14,
+              padding: '16px 20px',
+              fontSize: 17,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              minHeight: 60,
+              width: '100%',
+            }}
+          >
+            <span style={{ fontSize: 24 }}>👤</span>
+            <span>Мой профиль</span>
+            <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+          </button>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: '#e8e8e8', margin: '4px 0' }} />
+
+          <button
+            onClick={() => navigate('/settings/exercises')}
+            style={{
+              background: '#fff',
+              color: '#555',
+              border: '2px solid #d0d0d0',
+              borderRadius: 14,
+              padding: '16px 20px',
+              fontSize: 17,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              minHeight: 60,
+              width: '100%',
+            }}
+          >
+            <span style={{ fontSize: 24 }}>⚙️</span>
+            <span>Упражнения</span>
+            <span style={{ marginLeft: 'auto', fontSize: 20, opacity: 0.5 }}>›</span>
+          </button>
         </div>
       </div>
     </div>

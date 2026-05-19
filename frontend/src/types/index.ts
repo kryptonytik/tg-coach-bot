@@ -33,6 +33,8 @@ export interface Client {
   is_active: boolean;
   created_at: string;
   questionnaire: Questionnaire | null;
+  notes?: string | null;
+  last_workout_date?: string | null;
 }
 
 export interface Exercise {

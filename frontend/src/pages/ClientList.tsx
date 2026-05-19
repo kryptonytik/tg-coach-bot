@@ -6,6 +6,14 @@ import GoalBadge from '../components/GoalBadge';
 import Layout from '../components/Layout';
 import type { Client } from '../types';
 
+function getClientStatus(lastWorkoutDate?: string | null) {
+  if (!lastWorkoutDate) return { emoji: '🔴', label: 'Давно не было' };
+  const days = Math.floor((Date.now() - new Date(lastWorkoutDate).getTime()) / 86400000);
+  if (days <= 7) return { emoji: '🟢', label: 'В ритме' };
+  if (days <= 14) return { emoji: '🟡', label: 'Редко приходит' };
+  return { emoji: '🔴', label: 'Давно не было' };
+}
+
 export default function ClientList() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<'active' | 'all'>('active');
@@ -149,6 +157,14 @@ export default function ClientList() {
                         </span>
                       )}
                     </div>
+                    {(() => {
+                      const status = getClientStatus(client.last_workout_date);
+                      return (
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                          {status.emoji} {status.label}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <span style={{ fontSize: 20, color: '#ccc' }}>›</span>
                 </button>

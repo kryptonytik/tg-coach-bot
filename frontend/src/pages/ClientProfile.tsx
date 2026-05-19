@@ -137,6 +137,7 @@ export default function ClientProfile() {
   const [editing, setEditing] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal>('maintenance');
   const [editActive, setEditActive] = useState(true);
+  const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -170,6 +171,7 @@ export default function ClientProfile() {
     if (client) {
       setEditGoal(client.goal);
       setEditActive(client.is_active);
+      setEditNotes(client.notes || '');
       setEditing(true);
     }
   };
@@ -178,7 +180,11 @@ export default function ClientProfile() {
     setSaving(true);
     setSaveError(null);
     try {
-      await clientsApi.update(clientId, { goal: editGoal, is_active: editActive });
+      await clientsApi.update(clientId, {
+        goal: editGoal,
+        is_active: editActive,
+        notes: editNotes.trim() || null,
+      });
       setEditing(false);
       refetch();
     } catch (err: any) {
@@ -195,6 +201,17 @@ export default function ClientProfile() {
       navigate('/clients');
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Ошибка');
+    }
+  };
+
+  const handleDeletePermanent = async () => {
+    if (!window.confirm('Вы уверены? Это действие нельзя отменить.')) return;
+    if (!window.confirm('Подтвердите: вся история клиента будет удалена безвозвратно.')) return;
+    try {
+      await clientsApi.deletePermanent(clientId);
+      navigate('/clients');
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Ошибка удаления');
     }
   };
 
@@ -356,6 +373,26 @@ export default function ClientProfile() {
                 ))}
               </div>
             </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Заметки тренера</div>
+              <textarea
+                value={editNotes}
+                onChange={e => setEditNotes(e.target.value)}
+                placeholder="Особенности, противопоказания, пожелания..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1.5px solid #e5e5ea',
+                  borderRadius: 10,
+                  fontSize: 16,
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  resize: 'none',
+                  outline: 'none',
+                }}
+              />
+            </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={() => setEditing(false)}
@@ -432,6 +469,19 @@ export default function ClientProfile() {
         {/* Profile tab */}
         {activeTab === 'profile' && (
           <>
+            {/* Trainer notes */}
+            {client.notes && (
+              <div style={{
+                background: '#fffde7',
+                borderRadius: 12,
+                padding: '12px 16px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#f57f17', marginBottom: 4 }}>📝 Заметки тренера</div>
+                <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>{client.notes}</div>
+              </div>
+            )}
+
             {/* Questionnaire */}
             {q && (
               <>
@@ -503,6 +553,23 @@ export default function ClientProfile() {
                   Деактивировать
                 </button>
               )}
+              <button
+                onClick={handleDeletePermanent}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e53935',
+                  borderRadius: 12,
+                  background: '#fff',
+                  color: '#e53935',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginTop: 8,
+                }}
+              >
+                🗑️ Удалить клиента навсегда
+              </button>
             </div>
           </>
         )}
